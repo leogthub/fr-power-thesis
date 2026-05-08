@@ -68,6 +68,9 @@ def load_weather() -> pd.DataFrame:
         df.index = df.index.tz_localize("UTC").tz_convert(TIMEZONE)
     else:
         df.index = df.index.tz_convert(TIMEZONE)
+    # Drop ERA5 metadata columns
+    drop_cols = [c for c in df.columns if c in ("number", "expver") or df[c].dtype == object]
+    df = df.drop(columns=drop_cols, errors="ignore")
     return df.resample("h").mean()
 
 

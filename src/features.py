@@ -49,7 +49,19 @@ def build_feature_matrix(df: pd.DataFrame, target: str = "price_da_eur_mwh") -> 
     df = add_price_lags(df, target)
     df = add_weather_features(df)
     df = add_weather_stress_index(df)
-    df = df.dropna()
+
+    # Drop columns that are more than 50% NaN (e.g. offshore wind in France)
+    thresh = len(df) * 0.5
+    df = df.dropna(axis=1, thresh=int(thresh))
+
+    # Forward-fill remaining small gaps (hydro, generation)
+    df = df.ffill(limit=3)
+
+    # Only drop rows where target or lag features are missing
+    key_cols = [target, f"{target}_lag24h", f"{target}_lag168h"]
+    key_cols = [c for c in key_cols if c in df.columns]
+    df = df.dropna(subset=key_cols)
+
     X = df.drop(columns=[target])
     y = df[target]
     return X, y
