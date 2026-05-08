@@ -11,3 +11,5 @@ pyarrow
 statsmodels
 jupyter
 python-dotenv
+xarray
+netCDF4

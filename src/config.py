@@ -19,6 +19,7 @@ METRICS_DIR = ROOT / "outputs" / "metrics"
 # API keys
 ENTSOE_API_KEY = os.getenv("ENTSOE_API_KEY", "")
 CDS_API_KEY = os.getenv("CDS_API_KEY", "")
+CDS_API_URL = os.getenv("CDS_API_URL", "https://cds.climate.copernicus.eu/api")
 
 # Market config
 BIDDING_ZONE = "10YFR-RTE------C"  # France RTE
