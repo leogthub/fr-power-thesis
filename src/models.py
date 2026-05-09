@@ -16,6 +16,11 @@ def train_xgboost(X_train: pd.DataFrame, y_train: pd.Series) -> XGBRegressor:
     return model
 
 
-def naive_forecast(y: pd.Series, lag: int = 24) -> pd.Series:
-    """Same-hour previous day benchmark."""
+def naive_forecast(y: pd.Series, lag: int = 168) -> pd.Series:
+    """Same-hour previous week benchmark (lag-168h).
+
+    The roadmap defines the naive benchmark as price(h) = price(h-168),
+    i.e. the same hour from the previous week. This is a stronger baseline
+    than lag-24h because electricity prices exhibit strong weekly seasonality.
+    """
     return y.shift(lag)

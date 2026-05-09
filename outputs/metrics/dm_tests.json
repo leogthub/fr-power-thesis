@@ -1,0 +1,26 @@
+{
+  "rf_weather_vs_rf_no_weather": {
+    "description": "Does weather add value? (C vs B)",
+    "dm_stat": -0.565,
+    "p_value": 0.5721,
+    "significant_5pct": false
+  },
+  "rf_weather_vs_naive": {
+    "description": "Does RF-weather beat naive? (C vs A)",
+    "dm_stat": -53.5308,
+    "p_value": 0.0,
+    "significant_5pct": true
+  },
+  "rf_no_weather_vs_naive": {
+    "description": "Does RF-no-weather beat naive? (B vs A)",
+    "dm_stat": -53.4376,
+    "p_value": 0.0,
+    "significant_5pct": true
+  },
+  "xgboost_vs_rf_weather": {
+    "description": "XGBoost vs RF-weather (D vs C)",
+    "dm_stat": 10.8787,
+    "p_value": 0.0,
+    "significant_5pct": true
+  }
+}

@@ -1,3 +1,10 @@
+# ---------------------------------------------------------------------------
+# Large data files — too big for GitHub (regenerate with fetch scripts)
+# ---------------------------------------------------------------------------
+data/raw/era5_*.nc
+era5_parse.log
+
+# ---------------------------------------------------------------------------
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

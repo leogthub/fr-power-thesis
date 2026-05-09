@@ -6,6 +6,10 @@ Saves to data/raw/era5_YYYY_MM.nc, then merges to data/raw/era5_france.parquet.
 import sys
 sys.path.insert(0, ".")
 
+import ssl, urllib3
+ssl._create_default_https_context = ssl._create_unverified_context
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 import cdsapi
 import xarray as xr
 import pandas as pd
@@ -24,7 +28,7 @@ VARIABLES = [
     "total_precipitation",
 ]
 
-YEARS = range(2018, 2025)
+YEARS = range(2018, 2026)   # 2018-2025 inclusive (covers up to 2025-12)
 MONTHS = range(1, 13)
 
 client = cdsapi.Client(url=CDS_API_URL, key=CDS_API_KEY, quiet=True)
