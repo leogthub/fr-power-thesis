@@ -193,7 +193,7 @@ def main():
     except Exception as e:
         print(f"  WARNING: plot generation failed: {e}")
 
-    print("\n✓ Pipeline complete. All outputs saved to outputs/")
+    print("\nDone. All outputs saved to outputs/")
 
 
 if __name__ == "__main__":
