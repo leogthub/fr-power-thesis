@@ -121,5 +121,6 @@ Models are evaluated on an out-of-sample test set (last 12 months) using a walk-
 
 ## Author
 
-Leo Camberleng — EDHEC MSc Data Analysis & AI  
-Contact: leo.cmbrlng@gmail.com
+Leo Camberleng & Lyam Oumedjeber — EDHEC MSc Data Analysis & AI  
+Contact: leo.cmbrlng@gmail.com lyam.oumedjeber@gmail.com
+
