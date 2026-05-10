@@ -1,0 +1,6 @@
+Modele,P&L total (EUR/MW),P&L annualise (EUR/MW/an),"Sharpe (daily, ann.)",Max Drawdown (EUR/MW),Ratio Calmar,Win Rate (%)
+Naif (lag-168h),30614.74,21370.954,15.106,301.89,102.831,59.637
+RF sans meteo,50818.36,35474.312,23.562,301.89,170.692,65.459
+RF avec meteo,50522.32,35267.658,23.412,301.89,169.697,65.413
+XGBoost,50988.0,35592.731,22.745,301.89,171.262,65.76
+Long-only,63.64,44.425,0.107,588.74,0.11,43.558

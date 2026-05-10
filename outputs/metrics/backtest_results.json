@@ -1,0 +1,47 @@
+{
+  "naive": {
+    "label": "Naif (lag-168h)",
+    "total_pnl": 30614.73999999989,
+    "annualised_pnl": 21370.954238227147,
+    "sharpe": 15.10577936910947,
+    "max_drawdown": 301.8899999999994,
+    "calmar": 102.83062613625394,
+    "win_rate": 59.636532006019216
+  },
+  "rf_no_weather": {
+    "label": "RF sans meteo",
+    "total_pnl": 50818.36000000001,
+    "annualised_pnl": 35474.312243767316,
+    "sharpe": 23.561895312772247,
+    "max_drawdown": 301.8899999999994,
+    "calmar": 170.69175756572037,
+    "win_rate": 65.4589651580044
+  },
+  "rf_weather": {
+    "label": "RF avec meteo",
+    "total_pnl": 50522.31999999999,
+    "annualised_pnl": 35267.65828254848,
+    "sharpe": 23.412298895889904,
+    "max_drawdown": 301.8899999999994,
+    "calmar": 169.69740064610008,
+    "win_rate": 65.41266350272022
+  },
+  "xgboost": {
+    "label": "XGBoost",
+    "total_pnl": 50988.000000000146,
+    "annualised_pnl": 35592.73130193906,
+    "sharpe": 22.74472478243646,
+    "max_drawdown": 301.8899999999994,
+    "calmar": 171.26155457911176,
+    "win_rate": 65.75992591735155
+  },
+  "long_only": {
+    "label": "Long-only",
+    "total_pnl": 63.63999999999986,
+    "annualised_pnl": 44.42459833795009,
+    "sharpe": 0.10665916552305456,
+    "max_drawdown": 588.74,
+    "calmar": 0.10960926350518183,
+    "win_rate": 43.558282208588956
+  }
+}

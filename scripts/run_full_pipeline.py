@@ -183,7 +183,22 @@ def main():
     print(comp_df.to_string(index=False))
 
     # ------------------------------------------------------------------
-    # 7. Plots
+    # 7. Save test predictions (used by backtest.py)
+    # ------------------------------------------------------------------
+    PREDS_DIR = METRICS_DIR.parent / "predictions"
+    PREDS_DIR.mkdir(parents=True, exist_ok=True)
+    preds_df = pd.DataFrame({
+        "actual":        y_true,
+        "naive":         naive_pred,
+        "rf_no_weather": rf_b_pred,
+        "rf_weather":    rf_c_pred,
+        "xgboost":       xgb_pred,
+    })
+    preds_df.to_parquet(PREDS_DIR / "test_predictions.parquet")
+    print(f"\nTest predictions saved -> {PREDS_DIR / 'test_predictions.parquet'}")
+
+    # ------------------------------------------------------------------
+    # 8. Plots
     # ------------------------------------------------------------------
     print("\nGenerating plots...")
     try:
