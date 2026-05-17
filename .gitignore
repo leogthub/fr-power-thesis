@@ -227,3 +227,17 @@ __marimo__/
 # Node.js
 node_modules/
 package-lock.json
+
+# LaTeX auxiliary files (auto-generated on compile)
+thesis/main.aux
+thesis/main.bbl
+thesis/main.blg
+thesis/main.lof
+thesis/main.lot
+thesis/main.out
+thesis/main.toc
+thesis/main.log
+
+# Temporary zips
+outputs/figures.zip
+thesis.zip
