@@ -1,0 +1,187 @@
+% ============================================================
+%  Chapter 4 — Modelling
+% ============================================================
+\chapter{Modelling}
+\label{chap:model}
+
+\section{Model Architecture}
+
+We estimate four models that form a nested hierarchy, allowing us to decompose the sources of forecast improvement:
+
+\begin{description}
+  \item[Model A — Na\"{i}ve benchmark] The na\"{i}ve forecast assigns to each hour of the test set the realised price from the same hour of the previous week:
+  \begin{equation}
+    \hat{p}_t^A = p_{t - 168}
+  \end{equation}
+  This lag-168h benchmark captures the strong weekly seasonality of electricity prices and is more demanding than the commonly used lag-24h naive, as weekly patterns are more regular than daily ones. It provides the minimum performance bar that any predictive model must exceed.
+
+  \item[Model B — Random Forest without weather] A Random Forest regressor trained on 27 features: calendar variables, price lags, generation fundamentals, cross-border flows, and fuel prices. All ERA5 meteorological variables and derived weather features (HDD, CDD, wind power proxy, WSI) are excluded. Model B serves as the ablation baseline: its comparison to Model C isolates the marginal contribution of weather.
+
+  \item[Model C — Random Forest with weather (main model)] An identical Random Forest trained on the full 35-feature matrix, including all meteorological variables. This is our primary model.
+
+  \item[Model D — XGBoost with weather] An XGBoost gradient-boosted tree model trained on the same 35-feature matrix as Model C. Its comparison to Model C assesses whether a more expressive boosted model can improve over the Random Forest.
+\end{description}
+
+\section{Random Forest}
+\label{sec:rf}
+
+A Random Forest \citep{breiman2001} is an ensemble of $B$ decision trees, each trained on a bootstrap sample of the training data with a random subset of $m$ features considered at each split. The ensemble prediction is the average across all trees:
+\begin{equation}
+  \hat{p}_t^{\text{RF}} = \frac{1}{B}\sum_{b=1}^{B} T_b(\mathbf{x}_t)
+\end{equation}
+
+The randomisation at both the observation and feature level reduces variance relative to a single deep tree without introducing the high bias of shallow trees. For our application, the following hyperparameters are used (see Appendix~\ref{app:hyperparams}): $B = 500$ trees, maximum depth of 10, minimum of 5 observations per leaf. The \texttt{sqrt} feature selection rule is applied at each split.
+
+Random Forests are well-suited to electricity price forecasting for three reasons. First, the tree structure naturally captures threshold non-linearities (e.g., the effect of temperature below the 17\textdegree C heating threshold). Second, the ensemble is robust to the outlier prices that are common in electricity markets. Third, the Mean Decrease in Impurity (MDI) importance measure provides model-level interpretability that linear models cannot offer for non-linear interactions.
+
+\section{XGBoost}
+\label{sec:xgb}
+
+XGBoost \citep{chen2016} builds an ensemble of trees sequentially, where each tree corrects the residuals of the previous ensemble:
+\begin{equation}
+  \hat{p}_t^{(k)} = \hat{p}_t^{(k-1)} + \eta \cdot T_k(\mathbf{x}_t)
+\end{equation}
+where $\eta$ is the learning rate and $T_k$ is fitted to the negative gradient of the loss function. L1 and L2 regularisation terms on the tree leaf weights prevent overfitting. Our hyperparameters: 500 estimators, learning rate $\eta = 0.05$, maximum depth 6, subsample and column subsample ratios of 0.8.
+
+\section{Evaluation Metrics}
+
+We report five metrics on the out-of-sample test set:
+
+\begin{itemize}
+  \item \textbf{MAE} (Mean Absolute Error): $\frac{1}{n}\sum_t |p_t - \hat{p}_t|$. Primary metric; robust to extreme prices.
+  \item \textbf{RMSE} (Root Mean Squared Error): $\sqrt{\frac{1}{n}\sum_t (p_t - \hat{p}_t)^2}$. Penalises large errors more heavily; sensitive to price spikes.
+  \item \textbf{sMAPE} (Symmetric Mean Absolute Percentage Error): $\frac{100\%}{n}\sum_t \frac{|p_t - \hat{p}_t|}{(|p_t| + |\hat{p}_t|)/2}$. Symmetric formulation avoids division-by-zero issues with near-zero or negative prices.
+  \item \textbf{R$^2$}: Coefficient of determination. Measures the fraction of price variance explained by the model; 0 = na\"{i}ve mean forecast, 1 = perfect.
+  \item \textbf{Hit Ratio}: Percentage of hours where the model correctly predicts the direction of price change (up or down) relative to the previous hour's price.
+\end{itemize}
+
+MAPE is deliberately excluded. In electricity markets with frequent near-zero and negative prices, MAPE produces unbounded values that are not informative for model comparison. sMAPE avoids this issue by using the average of actual and predicted values in the denominator.
+
+\section{Results}
+
+Table~\ref{tab:model_results} presents the out-of-sample performance of all four models on the May 2024 -- April 2025 test period.
+
+\begin{table}[H]
+  \centering
+  \caption{Out-of-sample forecast performance (May 2024 -- April 2025, $n = 8{,}640$ hours)}
+  \label{tab:model_results}
+  \begin{tabular}{lccccc}
+    \toprule
+    \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{sMAPE} & \textbf{R$^2$} & \textbf{Hit \%} \\
+    & (EUR/MWh) & (EUR/MWh) & (\%) & & (\%) \\
+    \midrule
+    A — Na\"{i}f lag-168h       & 33.09 & 44.23 & 70.9 & 0.160 & 59.6 \\
+    B — RF without weather  & 16.95 & 22.88 & 44.2 & 0.775 & 65.5 \\
+    C — RF with weather     & 16.94 & 22.85 & 44.2 & 0.776 & 65.4 \\
+    D — XGBoost with weather & 19.14 & 28.18 & 45.4 & 0.659 & 65.8 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Several results are immediately noteworthy:
+
+\textbf{Machine learning vs na\"{i}ve:} Both Random Forest models reduce MAE by approximately 49\% relative to the na\"{i}ve benchmark (from 33.09 to $\approx$16.94 EUR/MWh) and increase R$^2$ from 0.160 to 0.776. This represents a substantial improvement in forecast accuracy, confirmed as statistically significant by the Diebold-Mariano tests in Section~\ref{sec:dm}.
+
+\textbf{Weather vs no weather:} The addition of meteorological features (Model C vs B) produces a negligible improvement: MAE decreases by only 0.01 EUR/MWh and R$^2$ increases by 0.001. This near-zero marginal contribution is the central empirical finding of this thesis.
+
+\textbf{Random Forest vs XGBoost:} With the default hyperparameters described above, XGBoost (Model D) underperforms both Random Forest models, with a MAE of 19.14 EUR/MWh and R$^2$ of 0.659. This result suggests that XGBoost's sequential correction mechanism may be sensitive to the extreme price observations present in the training data, and that hyperparameter optimisation (via Bayesian search or cross-validation) could narrow or reverse this gap.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{model_comparison.png}
+  \caption{Out-of-sample performance metrics for all four models: MAE, RMSE, R$^2$, and Hit Ratio. Models B and C (Random Forests) dominate across all metrics. Model A labels are A=Na\"{i}ve, B=RF no weather, C=RF weather, D=XGBoost.}
+  \label{fig:model_comparison}
+\end{figure}
+
+\subsection{Forecast vs Actual}
+
+Figure~\ref{fig:forecast_actual} shows the first month of the test period (May 2024). Model C (RF with weather) closely tracks the weekly and daily seasonality of actual prices. Deviations are largest during sudden price movements — consistent with the widely documented finding that price spikes driven by unexpected events (unplanned outages, extreme weather) are inherently difficult to forecast from a machine learning perspective.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{forecast_vs_actual.png}
+  \caption{Forecast vs actual prices for the first month of the test set (May 2024). Blue = actual; red dashed = RF with weather (Model C); grey dotted = na\"{i}ve (Model A). The RF model closely tracks the price structure while the na\"{i}ve exhibits systematic lags.}
+  \label{fig:forecast_actual}
+\end{figure}
+
+\subsection{Error Distribution}
+
+The error distributions of all models are approximately centred at zero, confirming the absence of systematic forecast bias (Figure~\ref{fig:error_dist}). The tails are heavier for the na\"{i}ve model, reflecting its poor performance during non-stationary market phases. RF models B and C exhibit nearly identical error distributions, further illustrating the marginal role of weather features.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{error_distribution.png}
+  \caption{Hourly forecast error distribution (left) and actual vs.\ predicted scatter plot (right). Errors are approximately centred at zero for all models; tails are heavier during price spike periods.}
+  \label{fig:error_dist}
+\end{figure}
+
+\subsection{Temporal Stability}
+
+Figure~\ref{fig:monthly_mae} decomposes MAE by calendar month over the test period. Performance is not uniform: errors peak in October--December 2024 and January 2025, consistent with higher price volatility during autumn-winter demand peaks. The two Random Forest models follow nearly identical monthly profiles, reinforcing the weather-ablation result. XGBoost shows higher month-to-month variability, particularly in April 2025 where its performance deteriorates sharply.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{backtest_mae_by_month.png}
+  \caption{MAE by month over the test period (May 2024 -- April 2025). Higher errors in autumn-winter reflect greater price volatility driven by heating demand peaks and lower renewable generation.}
+  \label{fig:monthly_mae}
+\end{figure}
+
+\section{Statistical Tests: Diebold-Mariano}
+\label{sec:dm}
+
+We apply the Diebold-Mariano test \citep{diebold1995} with Harvey-Leybourne-Newbold correction \citep{harvey1997} to four model pairs. The test is based on the loss differential:
+\begin{equation}
+  d_t = |p_t - \hat{p}_t^{(1)}| - |p_t - \hat{p}_t^{(2)}|
+\end{equation}
+Under $H_0$: equal predictive accuracy, the DM statistic follows an approximately standard normal distribution (with HLN correction, a $t$-distribution). A negative statistic indicates that Model 1 is more accurate than Model 2.
+
+\begin{table}[H]
+  \centering
+  \caption{Diebold-Mariano tests (HLN-corrected, MAE-based, $n = 8{,}640$)}
+  \label{tab:dm}
+  \begin{tabular}{lccc}
+    \toprule
+    \textbf{Comparison} & \textbf{DM Stat.} & \textbf{$p$-value} & \textbf{Sig.} \\
+    \midrule
+    C vs B: does weather add value?        & $-0.565$ & $0.572$ & n.s. \\
+    C vs A: does RF-weather beat na\"{i}ve?     & $-53.53$ & $<0.001$ & *** \\
+    B vs A: does RF-no-weather beat na\"{i}ve?  & $-53.44$ & $<0.001$ & *** \\
+    D vs C: XGBoost vs RF-weather?         & $+10.88$ & $<0.001$ & *** \\
+    \bottomrule
+    \multicolumn{4}{l}{\small * $p<0.10$; ** $p<0.05$; *** $p<0.01$; n.s. not significant}
+  \end{tabular}
+\end{table}
+
+The results are unambiguous on three of the four comparisons:
+
+\begin{enumerate}
+  \item Both Random Forest models significantly outperform the na\"{i}ve benchmark ($p < 0.001$), confirming that machine learning adds robust predictive value.
+  \item XGBoost significantly \textit{underperforms} the RF-weather model ($p < 0.001$) with the chosen hyperparameters.
+  \item \textbf{The addition of weather features is not statistically significant} ($p = 0.572$, DM = $-0.565$). We fail to reject $H_0$ of equal accuracy between Models B and C.
+\end{enumerate}
+
+\section{Feature Importance}
+\label{sec:importance}
+
+Figure~\ref{fig:feat_imp} shows the top 20 features by MDI importance for Model C (RF with weather). The ranking reveals the relative information content of each variable in the French day-ahead market:
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{feature_importance_rf.png}
+  \caption{Top 20 features by Mean Decrease in Impurity (MDI) — Random Forest with weather (Model C). Red bars denote weather-derived features; blue bars denote other features.}
+  \label{fig:feat_imp}
+\end{figure}
+
+Price lags dominate the ranking, with the 168-hour lag, 168-hour rolling mean, and 24-hour rolling mean occupying the top positions. This confirms the strong weekly autocorrelation of electricity prices and the importance of capturing recent price history. Among fundamental variables, the TTF natural gas price and load forecast rank prominently. Nuclear availability ratio also ranks among the top features, consistent with its critical role in French price formation.
+
+Among the weather features (highlighted in red), temperature and wind speed appear in the top 20 but with lower importance than price lags or TTF. The Weather Stress Index ranks lower still. This pattern is consistent with the DM test result: while weather variables do contain information about electricity prices, this information is largely already captured by the load forecast (which implicitly encodes temperature demand effects) and by TTF gas prices (which reflect the energy content of the commodity affected by weather).
+
+\section{Discussion of the Central Result}
+
+The non-significance of weather in Model C versus B is the most theoretically interesting finding of this thesis. We offer three complementary explanations:
+
+\textbf{Load forecast as a weather proxy:} The ENTSO-E load forecast is produced by RTE using a proprietary model that already incorporates temperature forecasts. When we include the load forecast as a feature, we are implicitly conditioning on temperature-driven demand — making the raw temperature variable informationally redundant.
+
+\textbf{TTF as an energy weather proxy:} Natural gas prices are themselves partly determined by heating demand across Europe. During cold spells, gas demand for heating rises, pushing TTF higher. A model including TTF thus already captures a component of the weather signal through the commodity market's aggregation of pan-European temperature expectations.
+
+\textbf{Nuclear dominance:} In the French market, the nuclear availability ratio explains a large share of price variance independently of weather. Its inclusion in Model B may absorb residual variation that would otherwise correlate with weather variables.

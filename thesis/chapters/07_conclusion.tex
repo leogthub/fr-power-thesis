@@ -1,0 +1,47 @@
+% ============================================================
+%  Chapter 7 — Conclusion
+% ============================================================
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+\section{Summary of Findings}
+
+This thesis investigated whether weather variables significantly improve day-ahead electricity price forecasting for the French market, and whether the resulting forecasts generate economic value through a directional trading strategy. Our analysis, conducted on a comprehensive hourly dataset spanning January 2018 to April 2025, leads to four principal conclusions.
+
+\textbf{First, machine learning models substantially outperform the na\"{i}ve benchmark.} Both Random Forest variants reduce MAE by approximately 49\% (from 33.09 to $\approx$16.94 EUR/MWh) and increase R$^2$ from 0.16 to 0.78 on the out-of-sample test set (May 2024--April 2025). The Diebold-Mariano test confirms this improvement is highly statistically significant ($p < 0.001$). The performance is robust: both RF models record positive monthly Sharpe ratios in every month of the test period.
+
+\textbf{Second, weather features do not significantly improve forecast accuracy in the French market.} The Diebold-Mariano test comparing the RF with weather (Model C) to the RF without weather (Model B) fails to reject the null of equal predictive accuracy ($p = 0.572$). We attribute this to the information redundancy hypothesis: the load forecast, TTF gas price, and nuclear availability ratio already implicitly encode the meteorological information relevant to French day-ahead price formation. This finding is the thesis's primary empirical contribution and challenges the prevailing assumption that weather integration is always beneficial in electricity price forecasting.
+
+\textbf{Third, Random Forest outperforms XGBoost with default hyperparameters.} XGBoost achieves a higher absolute P\&L in the backtest but at the cost of a Maximum Drawdown more than three times larger than the Random Forest. On a risk-adjusted basis (Calmar ratio of 107 vs 320--328), RF is the superior model. The performance gap is attributed to XGBoost's sensitivity to extreme price observations in the training set and could be closed through systematic hyperparameter optimisation.
+
+\textbf{Fourth, the forecasting models generate economically significant value.} Under the central transaction cost scenario (0.30 EUR/MWh), RF models generate net P\&L of approximately 136,700 EUR/MW over the 12-month test period, compared to 85,500 for the na\"{i}ve and essentially zero for the long-only reference. The trading performance is robust to cost assumptions (cost drag below 2\% across scenarios) and consistent across all calendar months.
+
+\section{Recommendations}
+
+Based on our findings, we offer the following recommendations for practitioners:
+
+\begin{itemize}
+  \item \textbf{Use Random Forest as the primary forecasting model} for the French day-ahead market. It outperforms both the na\"{i}ve benchmark and XGBoost on risk-adjusted metrics, and its MDI feature importances provide interpretable insights into price drivers.
+
+  \item \textbf{Prioritise fundamental features over weather.} Given our ablation result, model development effort is better spent improving the quality of load forecasts, fuel price integration, and cross-border flow data rather than adding more meteorological variables.
+
+  \item \textbf{Implement periodic retraining.} The current static model is trained through April 2024. A monthly or quarterly retraining schedule would adapt to structural market changes (increasing renewable penetration, nuclear fleet evolution) and is a prerequisite for production deployment.
+
+  \item \textbf{Complement point forecasts with prediction intervals.} The high RMSE relative to MAE indicates the presence of large forecast errors during spike periods. Risk managers should complement model predictions with scenario analysis for extreme price events.
+\end{itemize}
+
+\section{Broader Implications}
+
+The finding that weather is non-significant in the French day-ahead market, while counterintuitive, reflects a broader insight about information aggregation in commodity markets. When market prices (TTF gas) and operational forecasts (RTE load forecast) already incorporate weather expectations, raw meteorological variables become redundant from a statistical standpoint. This principle — that feature selection should account for the information already embedded in price-based variables — is likely applicable beyond the electricity market to other commodity forecasting problems.
+
+From a market design perspective, this thesis illustrates how the quality of publicly available data (ENTSO-E generation data, RTE load forecasts) can substitute for proprietary weather modelling infrastructure, lowering the barriers to participation in day-ahead electricity price forecasting.
+
+\section{Code and Data Availability}
+
+All code, data pipelines, trained models, and outputs from this thesis are openly available at:
+
+\begin{center}
+  \url{https://github.com/leogthub/fr-power-thesis}
+\end{center}
+
+The repository contains fully reproducible pipelines for data collection (ENTSO-E API, ERA5 CDS API, fuel prices), feature engineering, model training, evaluation, and the trading backtest. Data from ENTSO-E and ERA5 are publicly available under their respective open data licences.

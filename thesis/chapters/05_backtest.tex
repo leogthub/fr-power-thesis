@@ -1,0 +1,218 @@
+% ============================================================
+%  Chapter 5 — Trading Backtest
+% ============================================================
+\chapter{Day-Ahead Trading Backtest}
+\label{chap:backtest}
+
+\section{Motivation}
+
+Statistical metrics such as MAE and R$^2$ quantify forecast accuracy but do not directly measure the economic value of a forecasting model. A model with a lower MAE will generate higher trading profits only if its accuracy improvements correspond to better directional predictions. This chapter bridges the gap between statistical and economic performance by embedding the four model forecasts in a day-ahead directional trading strategy applied to the EPEX SPOT France market.
+
+\section{Strategy Design}
+
+\subsection{Market Mechanism}
+
+The EPEX SPOT France day-ahead market is a uniform-price batch auction. Each day at 12:00 CET, participants submit supply and demand bids for each hour of the following day (D+1). The market operator computes the equilibrium clearing price for each of the 24 hours simultaneously. All participants whose bids are accepted trade at the single clearing price.
+
+This auction mechanism has an important implication for strategy design: the signal for each hour of D+1 must be computed solely from information available before 12:00 CET on day D. In particular, all 24 hourly prices of day D are available at gate closure.
+
+\subsection{Signal Generation}
+
+For each hour $h$ of day $D+1$, we define the trading signal as:
+\begin{equation}
+  \text{signal}(h, D+1) = \text{sign}\!\left(\hat{p}(h, D+1) - p(h, D)\right)
+  \label{eq:signal}
+\end{equation}
+
+where $\hat{p}(h, D+1)$ is the model's forecast for hour $h$ of tomorrow and $p(h, D)$ is the realised price for the same hour today. This formulation is \textit{executable}: at auction gate closure, the reference price $p(h, D)$ is known for all 24 hours of the current day.
+
+The signal takes value $+1$ (LONG: we expect tomorrow's price at hour $h$ to be higher than today's) or $-1$ (SHORT: we expect it to be lower). A position of 1 MW is maintained throughout.
+
+\textbf{Dead-band filter:} When the predicted day-on-day move is very small, transaction costs will exceed the expected profit. We impose a dead-band of $\delta = 2$ EUR/MWh: if $|\hat{p}(h, D+1) - p(h, D)| < \delta$, the signal is set to zero (flat position) and no trade is executed. The 2 EUR/MWh threshold corresponds approximately to the 20th percentile of the absolute day-on-day price change in our test period.
+
+\subsection{Profit and Loss}
+
+The gross P\&L for hour $h$ of day $D+1$ is:
+\begin{equation}
+  \pi_{\text{gross}}(h, D+1) = \text{signal}(h, D+1) \times \left[p(h, D+1) - p(h, D)\right]
+  \label{eq:pnl}
+\end{equation}
+
+A long position profits when tomorrow's price for hour $h$ is indeed above today's price, and a short position profits when tomorrow's price is below. Units are EUR per MWh per MW of position size; for a 1 MW position, gross P\&L equals EUR per hour.
+
+\subsection{Transaction Costs}
+
+On EPEX SPOT, every matched MWh incurs a matching fee payable to the exchange, regardless of whether the trader's position was unchanged from the previous day. We model transaction costs as a fixed EUR/MWh charge applied to every active hour (i.e., every hour where the signal is non-zero):
+\begin{equation}
+  \text{cost}(h) = c \times |\text{signal}(h, D+1)|
+\end{equation}
+
+Net P\&L is then:
+\begin{equation}
+  \pi_{\text{net}}(h) = \pi_{\text{gross}}(h) - \text{cost}(h)
+\end{equation}
+
+We consider three cost scenarios drawn from the EPEX SPOT France fee schedule \citep{epex2024} and market practice:
+
+\begin{table}[H]
+  \centering
+  \caption{Transaction cost scenarios}
+  \label{tab:costs}
+  \begin{tabular}{llp{8cm}}
+    \toprule
+    \textbf{Scenario} & \textbf{Cost (EUR/MWh)} & \textbf{Rationale} \\
+    \midrule
+    Optimistic   & 0.10 & EPEX matching fee only ($\approx$0.04 EUR/MWh) plus minimal execution overhead; applicable to large, well-connected participants \\
+    Central      & 0.30 & EPEX fee plus bid-ask proxy ($\approx$0.20 EUR/MWh); representative of a mid-size market participant \\
+    Pessimistic  & 0.60 & Central plus imbalance settlement risk in low-liquidity off-peak periods; conservative upper bound \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Risk Metrics}
+
+\textbf{Sharpe Ratio:} We aggregate hourly net P\&L to daily, then annualise with $\sqrt{365}$ (electricity markets operate every calendar day). No risk-free rate is deducted, consistent with energy trading convention.
+\begin{equation}
+  \text{SR} = \frac{\mu_{\text{daily}}}{\sigma_{\text{daily}}} \times \sqrt{365}
+\end{equation}
+
+We deliberately use daily aggregation rather than hourly, which would inflate the Sharpe ratio by $\sqrt{24}$ by treating serially-correlated hourly P\&Ls as independent observations.
+
+\textbf{Maximum Drawdown (MDD):} The largest peak-to-trough decline in cumulative net P\&L over the test period, measured in EUR/MW.
+
+\textbf{Calmar Ratio:} Annualised net P\&L divided by absolute MDD. Higher values indicate better risk-adjusted performance.
+
+\textbf{Profit Factor:} Ratio of total positive P\&L to total absolute negative P\&L. A value above 1 indicates a profitable strategy; values above 2 indicate strong edge.
+
+\textbf{Win Rate:} Percentage of active hours (signal $\neq 0$) with strictly positive net P\&L.
+
+\section{Results — Central Scenario}
+
+Table~\ref{tab:backtest} presents the backtest results under the central cost scenario (0.30 EUR/MWh).
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Trading backtest results — central scenario (0.30 EUR/MWh per active hour)}
+  \label{tab:backtest}
+  \begin{tabular}{lrrrrrrr}
+    \toprule
+    \textbf{Model} & \textbf{Net P\&L} & \textbf{Sharpe} & \textbf{MDD} & \textbf{Calmar} & \textbf{PF} & \textbf{Win\%} & \textbf{Active\%} \\
+    & (EUR/MW) & & (EUR/MW) & & & & \\
+    \midrule
+    A — Na\"{i}ve    & 85,482  & 10.53  & 2,367  & 36.6   & 2.66 & 62.0\% & 94.9\% \\
+    B — RF no wx & 136,884 & 19.44  & 433    & 320.6  & 7.07 & 74.6\% & 87.7\% \\
+    C — RF wx    & 136,711 & 19.46  & 422    & 328.3  & 7.09 & 74.6\% & 87.5\% \\
+    D — XGBoost  & 142,012 & 18.78  & 1,351  & 106.6  & 7.13 & 74.9\% & 92.5\% \\
+    Long-only    & $-76$   & $-0.01$& 4,521  & $-0.02$& 1.00 & 48.2\% & 100\%  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Key findings:}
+
+\begin{enumerate}
+  \item \textbf{ML models generate substantially higher returns:} RF models (B and C) generate approximately 136,700 EUR/MW in net P\&L over the 12-month test period, compared to 85,500 for the na\"{i}ve and essentially zero for the long-only reference. This demonstrates clear economic value from improved directional accuracy.
+
+  \item \textbf{Dramatically lower drawdown for RF models:} The Maximum Drawdown of Model C (422 EUR/MW) is approximately 5.6 times smaller than the na\"{i}ve (2,367 EUR/MW) and more than 3 times smaller than XGBoost (1,351 EUR/MW). This is a critical risk metric for a market participant: a smaller drawdown means fewer periods where the strategy loses money consistently, reducing the risk of forced liquidation.
+
+  \item \textbf{Weather ablation confirmed:} Models B and C generate nearly identical results across all metrics (net P\&L: 136,884 vs 136,711; Sharpe: 19.44 vs 19.46; MDD: 433 vs 422 EUR/MW). This is the economic counterpart of the non-significant DM test: adding weather features does not improve trading performance.
+
+  \item \textbf{XGBoost highest P\&L but worst MDD among ML models:} XGBoost generates slightly higher gross and net P\&L (142,012 EUR/MW) but at the cost of a much larger drawdown (1,351 EUR/MW), resulting in a Calmar ratio of 106.6 versus 320--328 for the RF models. On a risk-adjusted basis, RF is the preferred model.
+
+  \item \textbf{Long-only earns nothing:} The long-only reference, which buys 1 MW every hour of D+1 at the previous day's same-hour price, earns $-76$ EUR/MW over the test period. This confirms that the strategy's returns are not explained by a simple directional market trend but by genuine forecasting skill.
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{equity_curves_net.png}
+  \caption{Cumulative net P\&L (EUR/MW) for all strategies under the central cost scenario (0.30 EUR/MWh). RF models (green, blue) accumulate returns steadily with small drawdowns. The na\"{i}ve strategy (grey) generates lower returns with larger drawdown. XGBoost (orange) shows higher returns but with more volatility. Long-only (pink dashed) earns essentially zero.}
+  \label{fig:equity_net}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{monthly_pnl.png}
+  \caption{Monthly net P\&L (EUR/MW) for the na\"{i}ve (Model A) and RF with weather (Model C) strategies. RF dominates in almost every calendar month.}
+  \label{fig:monthly_pnl}
+\end{figure}
+
+\section{Robustness Analysis}
+
+\subsection{Monthly Sharpe Ratio}
+
+A key concern with any backtest on 12 months of data is whether results are driven by a small number of exceptional months. Table~\ref{tab:monthly_sharpe} reports the Sharpe ratio computed independently for each calendar month of the test period.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Monthly Sharpe ratio (daily, annualised, $\sqrt{365}$) — central cost scenario}
+  \label{tab:monthly_sharpe}
+  \begin{tabular}{lrrrr}
+    \toprule
+    \textbf{Month} & \textbf{Na\"{i}ve} & \textbf{RF no wx} & \textbf{RF wx} & \textbf{XGBoost} \\
+    \midrule
+    May 2024 & 9.74  & 19.09 & 19.31 & 25.48 \\
+    Jun 2024 & 11.73 & 23.72 & 23.83 & 22.55 \\
+    Jul 2024 & 17.88 & 28.18 & 28.28 & 29.75 \\
+    Aug 2024 & 7.92  & 16.60 & 16.52 & 16.99 \\
+    Sep 2024 & 17.15 & 27.08 & 27.24 & 33.97 \\
+    Oct 2024 & 15.41 & 23.01 & 22.93 & 25.94 \\
+    Nov 2024 & 15.92 & 17.91 & 17.90 & 20.31 \\
+    Dec 2024 & 9.98  & 21.94 & 21.89 & 26.27 \\
+    Jan 2025 & 5.89  & 17.62 & 17.66 & 20.32 \\
+    Feb 2025 & 3.91  & 21.83 & 21.74 & 21.87 \\
+    Mar 2025 & 8.21  & 17.39 & 17.59 & 22.91 \\
+    Apr 2025 & 12.38 & 16.80 & 16.80 & $-0.99$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The RF models (B and C) record a positive Sharpe in \textit{all 12 months} of the test period. No single month drives the annual result: the monthly Sharpe ranges from 16.5 to 28.3, indicating robust and consistent performance throughout the test window. XGBoost records a negative Sharpe in April 2025, suggesting higher sensitivity to market regime changes.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{rolling_sharpe.png}
+  \caption{30-day rolling Sharpe ratio (daily net P\&L, annualised $\sqrt{365}$) for each model. RF models (green, blue) maintain consistently high Sharpe throughout the test period. The horizontal dashed line at Sharpe = 2 is provided as a reference for equity market conventions.}
+  \label{fig:rolling_sharpe}
+\end{figure}
+
+\subsection{Cost Sensitivity}
+
+Table~\ref{tab:sensitivity} reports net Sharpe across the three cost scenarios. The RF models' Sharpe ratio decreases by only 0.45--0.50 units from the optimistic to pessimistic scenario, confirming that the strategy's performance is not contingent on a particular cost assumption.
+
+\begin{table}[H]
+  \centering
+  \caption{Net Sharpe ratio by transaction cost scenario}
+  \label{tab:sensitivity}
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{Model} & \textbf{Optimistic} & \textbf{Central} & \textbf{Pessimistic} \\
+    & (0.10 EUR/MWh) & (0.30 EUR/MWh) & (0.60 EUR/MWh) \\
+    \midrule
+    A — Na\"{i}ve      & 10.73 & 10.53 & 10.23 \\
+    B — RF no wx   & 19.64 & 19.44 & 19.14 \\
+    C — RF wx      & 19.66 & 19.46 & 19.16 \\
+    D — XGBoost    & 18.98 & 18.78 & 18.47 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{cost_sensitivity.png}
+  \caption{Net P\&L (left) and Sharpe (right) by model and transaction cost scenario. All ML models remain substantially profitable even under the pessimistic cost assumption.}
+  \label{fig:cost_sensitivity}
+\end{figure}
+
+\section{Methodological Limitations}
+
+We document three limitations that should be considered when interpreting the backtest results:
+
+\begin{enumerate}
+  \item \textbf{Short test window:} The test period covers 12 months of a single market regime (normalised post-crisis prices). Generalising these results to other regimes — including the 2022 crisis or future periods of structural change — requires additional testing.
+
+  \item \textbf{Perfect execution assumed:} The backtest assumes that all bids are matched at the clearing price without slippage. In practice, large positions may affect the clearing price, and partial fills may occur during low-liquidity hours.
+
+  \item \textbf{Note on Sharpe interpretation:} The Sharpe ratios reported (10--19 annualised on daily P\&L) should not be compared to equity fund benchmarks. Electricity markets operate with a different risk-return structure: prices are highly mean-reverting at long horizons (the long-only earns zero), the market is less competitive than equity markets, and the strategy operates at 1 MW with no leverage. The relevant comparison is between models, not to absolute Sharpe thresholds from other asset classes.
+\end{enumerate}

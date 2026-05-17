@@ -1,0 +1,47 @@
+% ============================================================
+%  Chapter 1 — Introduction
+% ============================================================
+\chapter{Introduction}
+\label{chap:intro}
+
+\section{Context and Motivation}
+
+Electricity markets have undergone a fundamental transformation over the past three decades. The progressive liberalisation of European energy markets, accelerated by successive EU directives from 1996 onwards, replaced vertically integrated state monopolies with competitive wholesale markets in which prices are determined by the interaction of supply and demand. In France, the day-ahead electricity market operates through EPEX SPOT, where participants submit bids and offers for each hour of the following day, with a single clearing price determined by a batch auction that closes at 12:00 CET.
+
+The resulting price series is among the most complex in quantitative finance. Unlike commodity prices, electricity cannot be economically stored at scale, which forces supply and demand into instantaneous equilibrium at every moment. The consequence is a price process characterised by extreme volatility, sharp intraday seasonality, strong weekly periodicity, and irregular price spikes that can reach several thousand euros per megawatt-hour during scarcity episodes. The French market adds a layer of specificity: with approximately 63 GW of installed nuclear capacity representing roughly 70\% of annual electricity production \citep{rte2023}, the availability of the nuclear fleet is a primary determinant of price levels. In parallel, France's residential heating stock is predominantly electric, creating a thermosensitivity of approximately 2.4 GW per degree Celsius in winter \citep{rte2024} — the highest in Europe.
+
+Accurate forecasting of day-ahead prices is therefore not merely an academic exercise. It is a critical input for energy suppliers setting customer tariffs, for industrial consumers optimising consumption schedules, for renewables producers valuing flexibility options, and for traders positioning in forward markets. A one euro per megawatt-hour improvement in forecast accuracy over a 100 MW portfolio translates to approximately 876,000 EUR in annual value capture — motivating sustained interest in more accurate models.
+
+\section{Research Question}
+
+This thesis addresses the following central question:
+
+\begin{quote}
+\textit{Do weather variables significantly improve the accuracy of day-ahead electricity price forecasts for the French market, and if so, what is the economic value of that improvement?}
+\end{quote}
+
+This question is decomposed into three sub-questions:
+
+\begin{enumerate}
+  \item Can machine learning models (Random Forest, XGBoost) substantially outperform a na\"{i}ve statistical benchmark on French day-ahead prices?
+  \item Does the addition of meteorological features (temperature, wind speed, solar radiation, Heating Degree Days, Weather Stress Index) produce a statistically significant improvement over a model built on market fundamentals alone?
+  \item Can the predictive improvement of these models be translated into economically meaningful returns through a day-ahead directional trading strategy?
+\end{enumerate}
+
+\section{Contribution}
+
+This thesis makes three contributions to the electricity price forecasting literature:
+
+\begin{itemize}
+  \item \textbf{Comprehensive French dataset:} We assemble and publish a reproducible dataset spanning 2018--2025 that combines ENTSO-E generation and load data, ERA5 reanalysis weather data, cross-border flow data, and fuel price series. To our knowledge, this is one of the most complete publicly-sourced datasets for the French day-ahead market.
+
+  \item \textbf{Rigorous ablation study:} We design a four-model experiment (A/B/C/D) that isolates the marginal contribution of weather features using a Diebold-Mariano test with Harvey-Leybourne-Newbold correction. The result — that weather does not significantly improve forecast accuracy in the enriched fundamental model — is a non-trivial finding that contributes to the understanding of information redundancy in electricity price drivers.
+
+  \item \textbf{Day-ahead executable trading backtest:} We implement a directional trading strategy using an economically coherent signal design grounded in the actual mechanics of the EPEX SPOT day-ahead auction, with realistic transaction cost scenarios drawn from the 2024 EPEX fee schedule.
+\end{itemize}
+
+\section{Structure of the Thesis}
+
+The remainder of this thesis is organised as follows. Chapter~\ref{chap:lit} reviews the literature on electricity price forecasting, covering both statistical and machine learning approaches. Chapter~\ref{chap:data} describes the data sources, feature engineering process, and exploratory analysis. Chapter~\ref{chap:model} presents the modelling framework, results, and statistical tests. Chapter~\ref{chap:backtest} introduces the trading backtest and its results. Chapter~\ref{chap:discussion} discusses the findings, limitations, and extensions. Chapter~\ref{chap:conclusion} concludes.
+
+All code, data pipelines, trained models, and figures are available in the project repository at \url{https://github.com/leogthub/fr-power-thesis}.

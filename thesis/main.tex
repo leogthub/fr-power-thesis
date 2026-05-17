@@ -1,0 +1,309 @@
+% ============================================================
+%  FR Power Thesis — Main Document
+%  EDHEC MSc Data Analysis & AI
+%  Compiler: pdflatex (Overleaf compatible)
+% ============================================================
+
+\documentclass[12pt, a4paper, oneside]{report}
+
+% ── Encoding & language ──────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+% ── Typography ───────────────────────────────────────────────
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\onehalfspacing
+
+% ── Page layout ──────────────────────────────────────────────
+\usepackage[
+  top=2.5cm, bottom=2.5cm,
+  left=3.0cm, right=2.5cm
+]{geometry}
+
+% ── Mathematics ──────────────────────────────────────────────
+\usepackage{amsmath, amssymb, amsthm}
+
+% ── Figures & tables ─────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{float}
+\usepackage[font=small, labelfont=bf, justification=centering]{caption}
+\usepackage{subcaption}
+
+% ── Colours ──────────────────────────────────────────────────
+\usepackage[dvipsnames]{xcolor}
+\definecolor{edhec}{RGB}{0, 62, 126}
+\definecolor{accent}{RGB}{46, 95, 163}
+
+% ── Headers & footers ────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{\leftmark}}
+\fancyhead[R]{\small\textit{EDHEC MSc Data Analysis \& AI}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ── Section formatting ───────────────────────────────────────
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries\color{edhec}}
+  {\chaptertitlename\ \thechapter}{12pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-20pt}{30pt}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}
+  {\thesubsection}{1em}{}
+
+% ── Hyperlinks ───────────────────────────────────────────────
+\usepackage[
+  colorlinks=true,
+  linkcolor=edhec,
+  citecolor=accent,
+  urlcolor=accent,
+  bookmarks=true,
+  pdfauthor={Leo Camberleng},
+  pdftitle={The Role of Weather in French Day-Ahead Electricity Price Forecasting}
+]{hyperref}
+
+% ── Bibliography ─────────────────────────────────────────────
+\usepackage[round, authoryear, sort]{natbib}
+
+% ── Code listings ────────────────────────────────────────────
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!8}
+}
+
+% ── Misc ─────────────────────────────────────────────────────
+\usepackage{enumitem}
+\usepackage{csquotes}
+\usepackage{acronym}
+\usepackage{appendix}
+
+% ── Path to figures ──────────────────────────────────────────
+\graphicspath{{../outputs/figures/}}
+
+% ============================================================
+\begin{document}
+
+% ── Title page ───────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{1cm}
+
+  {\color{edhec}\rule{\linewidth}{2pt}}
+  \vspace{0.5cm}
+
+  {\LARGE\bfseries\color{edhec}
+    The Role of Weather in French\\[6pt]
+    Day-Ahead Electricity Price Forecasting:\\[6pt]
+    A Random Forest Approach
+  \par}
+
+  \vspace{0.5cm}
+  {\color{edhec}\rule{\linewidth}{1pt}}
+  \vspace{1.5cm}
+
+  {\large Master's Thesis\\[4pt]
+   MSc Data Analysis \& AI\\[4pt]
+   EDHEC Business School}
+
+  \vspace{2cm}
+
+  {\large\bfseries Leo Camberleng}\\[6pt]
+  {\normalsize leo.cmbrlng@gmail.com}
+
+  \vspace{1cm}
+
+  {\large\bfseries Lyam Oumedjeber}\\[6pt]
+  {\normalsize lyam.oumedjeber@edhec.com}
+
+  \vspace{2cm}
+
+  {\normalsize Supervised by the MSc Data Analysis \& AI Faculty\\[4pt]
+   EDHEC Business School}
+
+  \vspace{2cm}
+
+  {\large May 2026}
+
+  \vfill
+  {\color{edhec}\rule{\linewidth}{2pt}}
+\end{titlepage}
+
+% ── Abstract ─────────────────────────────────────────────────
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+This thesis investigates whether weather variables significantly improve day-ahead electricity price forecasting for the French market (EPEX SPOT France) using machine learning models. We build a comprehensive dataset spanning January 2018 to April 2025, combining hourly price and generation data from the ENTSO-E Transparency Platform with ERA5 reanalysis weather data, cross-border flow data, and fuel price series (TTF natural gas, ARA coal, EU ETS carbon allowances).
+
+Four models are compared: a na\"{i}ve lag-168h benchmark (Model A), a Random Forest without weather features (Model B), a Random Forest with full weather features (Model C), and an XGBoost model with weather features (Model D). Models are evaluated on a strict out-of-sample test set covering May 2024 to April 2025 (8,640 hours).
+
+Our central finding is that weather features do not significantly improve forecast accuracy over the enriched fundamental model, as confirmed by a Diebold-Mariano test (p = 0.572). We attribute this to the fact that fuel prices (TTF gas) and nuclear availability already implicitly encode meteorological information in the French market context. Both Random Forest models achieve a Mean Absolute Error of approximately 16.9 EUR/MWh and R$^2 \approx 0.776$, representing a 49\% reduction in error over the na\"{i}ve benchmark. A day-ahead directional trading backtest confirms the economic value of these forecasts, with RF models generating net profits of approximately 136,700 EUR/MW over the test period with a maximum drawdown ten times smaller than the na\"{i}ve strategy.
+
+\vspace{1em}
+\noindent\textbf{Keywords:} electricity price forecasting, day-ahead market, EPEX SPOT France, Random Forest, XGBoost, weather features, Diebold-Mariano test, feature engineering, trading backtest.
+
+% ── Acknowledgements ─────────────────────────────────────────
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+
+We would like to thank the EDHEC MSc Data Analysis \& AI faculty for their guidance throughout this project. We are grateful to RTE (R\'{e}seau de Transport d'Électricit\'{e}) and ENTSO-E for making electricity market data publicly available through the Transparency Platform, and to the Copernicus Climate Change Service for providing open access to ERA5 reanalysis data.
+
+% ── TOC ──────────────────────────────────────────────────────
+\tableofcontents
+\listoffigures
+\listoftables
+
+% ── Acronyms ─────────────────────────────────────────────────
+\chapter*{List of Acronyms}
+\addcontentsline{toc}{chapter}{List of Acronyms}
+\begin{acronym}
+  \acro{DA}{Day-Ahead}
+  \acro{DM}{Diebold-Mariano}
+  \acro{ENTSO-E}{European Network of Transmission System Operators for Electricity}
+  \acro{ETS}{Emissions Trading System}
+  \acro{EUA}{European Union Allowance}
+  \acro{HDD}{Heating Degree Days}
+  \acro{CDD}{Cooling Degree Days}
+  \acro{CSS}{Clean Spark Spread}
+  \acro{CDS}{Clean Dark Spread}
+  \acro{MAE}{Mean Absolute Error}
+  \acro{RMSE}{Root Mean Square Error}
+  \acro{sMAPE}{Symmetric Mean Absolute Percentage Error}
+  \acro{MDD}{Maximum Drawdown}
+  \acro{MDI}{Mean Decrease in Impurity}
+  \acro{RF}{Random Forest}
+  \acro{RTE}{R\'{e}seau de Transport d'Électricit\'{e}}
+  \acro{TSO}{Transmission System Operator}
+  \acro{WSI}{Weather Stress Index}
+\end{acronym}
+
+% ── Chapters ─────────────────────────────────────────────────
+\input{chapters/01_introduction}
+\input{chapters/02_literature}
+\input{chapters/03_data}
+\input{chapters/04_modelling}
+\input{chapters/05_backtest}
+\input{chapters/06_discussion}
+\input{chapters/07_conclusion}
+
+% ── Bibliography ─────────────────────────────────────────────
+\bibliographystyle{plainnat}
+\bibliography{bibliography}
+
+% ── Appendix ─────────────────────────────────────────────────
+\begin{appendices}
+\chapter{Model Hyperparameters}
+\label{app:hyperparams}
+
+\begin{table}[H]
+\centering
+\caption{Hyperparameters for Random Forest (Models B and C)}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+n\_estimators   & 500 \\
+max\_depth      & 10  \\
+min\_samples\_leaf & 5 \\
+max\_features   & \texttt{sqrt} \\
+n\_jobs         & $-1$ (all cores) \\
+random\_state   & 42 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Hyperparameters for XGBoost (Model D)}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+n\_estimators     & 500 \\
+learning\_rate    & 0.05 \\
+max\_depth        & 6 \\
+subsample         & 0.8 \\
+colsample\_bytree & 0.8 \\
+random\_state     & 42 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{Full Feature List}
+\label{app:features}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Complete list of features used in Models B, C and D}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Category} & \textbf{Feature} & \textbf{Description} \\
+\midrule
+\multirow{5}{*}{Calendar}
+  & hour\_sin / hour\_cos   & Sine/cosine encoding of hour of day \\
+  & month\_sin / month\_cos & Sine/cosine encoding of month \\
+  & dayofweek              & Day of week (0=Monday) \\
+  & is\_weekend            & Binary weekend indicator \\
+\midrule
+\multirow{5}{*}{Price lags}
+  & price\_lag24h          & Price 24 hours ago \\
+  & price\_lag48h          & Price 48 hours ago \\
+  & price\_lag168h         & Price 168 hours ago (same hour, previous week) \\
+  & price\_roll24h\_mean   & 24-hour rolling mean (lagged 24h) \\
+  & price\_roll168h\_mean  & 168-hour rolling mean (lagged 24h) \\
+\midrule
+\multirow{7}{*}{Fundamentals}
+  & load\_forecast\_mw      & Hourly load forecast (MW) \\
+  & gen\_nuclear\_mw        & Nuclear generation (MW) \\
+  & gen\_gas\_mw            & Gas generation (MW) \\
+  & gen\_hydro\_ror\_mw     & Run-of-river hydro generation (MW) \\
+  & gen\_hydro\_reservoir\_mw & Reservoir hydro generation (MW) \\
+  & gen\_solar\_mw          & Solar generation (MW) \\
+  & gen\_wind\_onshore\_mw  & Onshore wind generation (MW) \\
+\midrule
+\multirow{4}{*}{Cross-border}
+  & flow\_net\_fr\_de\_mw  & Net cross-border flow France--Germany (MW) \\
+  & flow\_net\_fr\_es\_mw  & Net cross-border flow France--Spain (MW) \\
+  & flow\_net\_fr\_gb\_mw  & Net cross-border flow France--UK (MW) \\
+  & flow\_net\_fr\_be\_mw  & Net cross-border flow France--Belgium (MW) \\
+\midrule
+\multirow{2}{*}{Fuel prices}
+  & ttf\_eur\_mwh          & TTF natural gas day-ahead price (EUR/MWh) \\
+  & coal\_eur\_t           & ARA coal price (EUR/tonne) \\
+\midrule
+\multirow{6}{*}{Weather}
+  & temperature\_2m        & 2m air temperature, spatial mean France (\textdegree C) \\
+  & wind\_speed\_10m       & 10m wind speed (m/s) \\
+  & solar\_radiation       & Surface solar irradiance (W/m\textsuperscript{2}) \\
+  & precipitation          & Total precipitation (m/h) \\
+  & hdd                    & Heating Degree Days (threshold 17\textdegree C, RTE) \\
+  & cdd                    & Cooling Degree Days (threshold 22\textdegree C) \\
+\midrule
+\multirow{3}{*}{Derived}
+  & wind\_power\_proxy     & Wind speed$^3$ (proportional to wind power) \\
+  & weather\_stress\_index & HDD / wind speed (cold \& low wind composite) \\
+  & nuclear\_avail\_ratio  & Nuclear generation / 63,000 MW installed capacity \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\end{appendices}
+
+\end{document}

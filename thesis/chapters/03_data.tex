@@ -1,0 +1,180 @@
+% ============================================================
+%  Chapter 3 — Data and Feature Engineering
+% ============================================================
+\chapter{Data and Feature Engineering}
+\label{chap:data}
+
+\section{Data Sources}
+
+Our dataset combines four primary sources, covering the period January 2018 to April 2025 at hourly resolution, yielding approximately 64,000 observations before feature construction.
+
+\subsection{ENTSO-E Transparency Platform}
+
+The European Network of Transmission System Operators for Electricity (ENTSO-E) makes hourly data publicly available through its Transparency Platform \citep{entsoe2024}. We retrieve the following series for France (bidding zone \texttt{10YFR-RTE------C}):
+
+\begin{itemize}
+  \item \textbf{Day-ahead prices} (EUR/MWh): the clearing price of the EPEX SPOT France day-ahead auction, which constitutes our forecasting target.
+  \item \textbf{Actual total load} and \textbf{load forecast} (MW): the TSO's hourly load forecast, published the day before delivery, serves as a key predictor of demand pressure.
+  \item \textbf{Actual generation by source} (MW): nuclear, gas, run-of-river hydro, reservoir hydro, solar, and onshore wind.
+  \item \textbf{Cross-border physical flows} (MW): net hourly flows between France and its four main interconnected neighbours — Germany, Spain, the United Kingdom, and Belgium. These flows reflect relative price differentials and capacity constraints across the European internal energy market.
+\end{itemize}
+
+Data are retrieved programmatically using the \texttt{entsoe-py} Python library with the official ENTSO-E API key. All timestamps are converted to UTC+1 (Europe/Paris) and aligned on a consistent hourly index.
+
+\subsection{ERA5 Reanalysis Weather Data}
+
+Meteorological variables are sourced from the ERA5 reanalysis dataset produced by the European Centre for Medium-Range Weather Forecasts (ECMWF) through the Copernicus Climate Change Service \citep{hersbach2020}. ERA5 provides hourly estimates of atmospheric variables on a 0.25$^{\circ} \times 0.25^{\circ}$ grid, covering the globe from 1940 to present.
+
+We retrieve the following variables for a bounding box covering metropolitan France (41--51$^{\circ}$N, -5--10$^{\circ}$E) and compute spatial means weighted by grid area:
+
+\begin{itemize}
+  \item 2-metre air temperature (\textdegree C)
+  \item 10-metre wind speed (m/s)
+  \item Surface solar irradiance (W/m$^2$, derived from surface net solar radiation)
+  \item Total precipitation (m/h)
+\end{itemize}
+
+Data are downloaded month-by-month using the \texttt{cdsapi} library to avoid request size limitations, then concatenated and temporally aligned with the ENTSO-E series.
+
+\subsection{Fuel Prices}
+
+Fuel prices are retrieved from public market data sources:
+
+\begin{itemize}
+  \item \textbf{TTF natural gas} (EUR/MWh): the Title Transfer Facility day-ahead price, the European gas benchmark. TTF prices are the primary determinant of the marginal cost of gas-fired generation, which is frequently the price-setting technology in France outside nuclear baseload hours.
+  \item \textbf{ARA coal} (EUR/tonne): the price of thermal coal delivered to Amsterdam-Rotterdam-Antwerp. Together with EU ETS carbon allowance prices, coal prices determine the Clean Dark Spread and the competitiveness of coal against gas.
+\end{itemize}
+
+\subsection{Price Statistics}
+
+Figure~\ref{fig:price_series} shows the full price series from 2018 to 2025. The period exhibits three distinct regimes: a pre-crisis period (2018--2021) with prices typically between 20--80 EUR/MWh; the energy crisis of 2021--2023, during which French prices reached historical extremes above 1,000 EUR/MWh driven by the simultaneous Russian gas supply disruption and the historically low nuclear availability due to corrosion-related maintenance shutdowns; and a normalisation phase from 2023 onwards as gas prices declined and nuclear availability recovered toward 75--80\%.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{price_series_full.png}
+  \caption{French day-ahead electricity prices (EUR/MWh), January 2018 -- April 2025. The 2022 energy crisis produced historically extreme prices, driven by the simultaneous gas supply shock and low nuclear availability.}
+  \label{fig:price_series}
+\end{figure}
+
+The distribution of hourly prices is heavily right-skewed with a non-trivial mass of negative observations (Figure~\ref{fig:price_dist}). Negative prices occur when inflexible generators (nuclear, wind) are constrained to run and cannot be economically curtailed, resulting in producers paying consumers to absorb excess generation.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{price_distribution.png}
+  \caption{Distribution of hourly day-ahead prices (left) and proportion of negative-price hours by year (right). Negative prices account for approximately 3--8\% of hours in recent years.}
+  \label{fig:price_dist}
+\end{figure}
+
+The strong seasonality at multiple frequencies is apparent in Figure~\ref{fig:price_heatmap}, which shows the average price by hour of day and month of year. Winter morning and evening peaks, summer midday price compressions from solar generation, and the consistent week/weekend differential are all visible.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{price_heatmap_hour_month.png}
+  \caption{Average hourly price by hour of day and month of year (2018--2025). Dark shading indicates high prices; winter peak hours (07:00--09:00, 18:00--20:00) are systematically elevated.}
+  \label{fig:price_heatmap}
+\end{figure}
+
+\section{Feature Engineering}
+\label{sec:features}
+
+From the raw data sources described above, we construct 35 features organised into five categories. The full list is provided in Appendix~\ref{app:features}; we describe the most methodologically significant features here.
+
+\subsection{Calendar Features}
+
+Calendar variables capture the deterministic seasonality of electricity demand. We encode the hour of day and month of year using sine/cosine transformations to preserve their cyclic nature:
+
+\begin{equation}
+  \text{hour\_sin} = \sin\!\left(\frac{2\pi \cdot h}{24}\right), \quad
+  \text{hour\_cos} = \cos\!\left(\frac{2\pi \cdot h}{24}\right)
+\end{equation}
+
+This encoding ensures that the model correctly identifies hour 23 and hour 0 as adjacent, which a linear encoding would fail to capture. An \texttt{is\_weekend} binary indicator captures the systematic weekday/weekend price differential visible in Figure~\ref{fig:price_heatmap}.
+
+\subsection{Price Lags}
+
+Price lags are the most informative predictors in our feature matrix, reflecting the strong autocorrelation structure of electricity prices. We include lags at 24h, 48h, and 168h (one week), as well as 24-hour and 168-hour rolling means computed on the lagged series to prevent data leakage:
+
+\begin{equation}
+  \bar{p}_{t, 24} = \frac{1}{24}\sum_{k=25}^{48} p_{t-k}
+\end{equation}
+
+The 168-hour lag (same hour, previous week) is particularly important: weekly seasonality in electricity prices is strong, and the previous week's same-hour price is a better predictor than the previous day's price in many market conditions.
+
+\subsection{Weather-Derived Features}
+
+Beyond the raw ERA5 variables, we construct three derived features specifically motivated by the French market context:
+
+\textbf{Heating Degree Days (HDD):}
+\begin{equation}
+  \text{HDD}_t = \max(0,\ 17 - T_t)
+\end{equation}
+where $T_t$ is the spatially-averaged 2m temperature at hour $t$. The threshold of 17\textdegree C is the standard used by RTE for French demand modelling \citep{rte2024}, reflecting the predominantly electric heating stock. This is higher than the 15\textdegree C threshold commonly used in Germany, consistent with France's stronger thermosensitivity.
+
+\textbf{Wind Power Proxy:}
+\begin{equation}
+  \text{wind\_proxy}_t = v_t^3
+\end{equation}
+where $v_t$ is the 10m wind speed. Wind turbine power output is proportional to the cube of wind speed in the operational range, making this a physically motivated transformation \citep{staffell2016}.
+
+\textbf{Weather Stress Index (WSI):}
+\begin{equation}
+  \text{WSI}_t = \frac{\text{HDD}_t}{v_t + \varepsilon}
+\end{equation}
+where $\varepsilon = 0.1$ prevents division by zero. The WSI is high when temperatures are cold AND wind is weak — the combination that maximises electricity demand while minimising wind generation, historically associated with the most extreme price spikes in France.
+
+\subsection{Nuclear Availability Ratio}
+
+\begin{equation}
+  \text{nuclear\_avail}_t = \frac{\text{gen\_nuclear}_t}{63{,}000 \text{ MW}}
+\end{equation}
+
+This ratio captures the fraction of France's installed nuclear fleet currently online \citep{rte2023}. A ratio below 0.7 signals significant outage periods and is historically associated with higher prices, as illustrated in Figure~\ref{fig:price_vs_nuclear}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{price_vs_nuclear.png}
+  \caption{Monthly average day-ahead price vs.\ nuclear availability ratio (2018--2025). The negative correlation is particularly strong during the 2022 outage crisis when availability fell below 0.5.}
+  \label{fig:price_vs_nuclear}
+\end{figure}
+
+\subsection{Weather and Price Correlation}
+
+Figure~\ref{fig:price_vs_temperature} shows the relationship between temperature and day-ahead price. The expected U-shaped pattern is visible: prices rise at very low temperatures (heating demand) and slightly at very high temperatures (cooling demand), with a trough around 15--20\textdegree C. Figure~\ref{fig:weather_stress} illustrates the Weather Stress Index seasonality, with peaks in January--February coinciding with maximum heating demand and minimum wind generation probability.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{price_vs_temperature.png}
+  \caption{Day-ahead price vs.\ 2m temperature (hexbin density plot). The non-linear U-shaped relationship motivates the use of HDD/CDD rather than raw temperature.}
+  \label{fig:price_vs_temperature}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{weather_stress_index.png}
+  \caption{Weather Stress Index (WSI) seasonal profile and correlation with day-ahead prices. High WSI values are concentrated in December--February and are associated with elevated price volatility.}
+  \label{fig:weather_stress}
+\end{figure}
+
+\section{Train / Test Split}
+
+A strict temporal split is applied to prevent data leakage. The model is trained on all hours from January 2018 to April 2024, and evaluated on the out-of-sample test set from May 2024 to April 2025 (12 months, 8,640 hours). No information from the test period is used in feature construction, model selection, or hyperparameter tuning.
+
+\begin{table}[H]
+  \centering
+  \caption{Train and test set summary}
+  \label{tab:split}
+  \begin{tabular}{llrr}
+    \toprule
+    \textbf{Set} & \textbf{Period} & \textbf{Hours} & \textbf{Share} \\
+    \midrule
+    Training & Jan 2018 -- Apr 2024 & 55,248 & 86.4\% \\
+    Test (out-of-sample) & May 2024 -- Apr 2025 & 8,640 & 13.6\% \\
+    \midrule
+    Total & Jan 2018 -- Apr 2025 & 63,888 & 100\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The test period (May 2024 -- April 2025) is a ``normal'' market regime characterised by moderate price levels (30--80 EUR/MWh), recovered nuclear availability (75--80\%), and declining gas prices. This contrasts with the training set, which includes the extreme 2022 crisis. The model must therefore generalise from a period of extreme stress to a period of normalisation — a realistic and demanding out-of-sample challenge.
+
+\textbf{Data cleaning:} Columns with more than 50\% missing values are dropped. Remaining gaps (typically up to 3 consecutive hours) are filled by forward-fill (\texttt{ffill}). Rows where the target variable or core lag features are missing are dropped. This procedure results in 63,888 clean observations.
