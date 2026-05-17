@@ -1,6 +1,6 @@
-Modele,P&L total (EUR/MW),P&L annualise (EUR/MW/an),"Sharpe (daily, ann.)",Max Drawdown (EUR/MW),Ratio Calmar,Win Rate (%)
-Naif (lag-168h),30614.74,21370.954,15.106,301.89,102.831,59.637
-RF sans meteo,50818.36,35474.312,23.562,301.89,170.692,65.459
-RF avec meteo,50522.32,35267.658,23.412,301.89,169.697,65.413
-XGBoost,50988.0,35592.731,22.745,301.89,171.262,65.76
-Long-only,63.64,44.425,0.107,588.74,0.11,43.558
+Modele,P&L brut (EUR/MW),P&L net (EUR/MW),"Sharpe net (daily,sqrt365)",Max Drawdown (EUR/MW),Calmar,Win Rate (%),Profit Factor,Heures actives,Actif (%),Cost Drag (%)
+Naif lag-168h,87935.91,85481.91,10.53,2367.47,36.61,61.99,2.66,8180,94.94,2.79
+RF sans meteo,139149.52,136883.62,19.44,432.9,320.59,74.55,7.07,7553,87.66,1.63
+RF avec meteo,138971.4,136710.6,19.46,422.26,328.26,74.56,7.09,7536,87.47,1.63
+XGBoost,144402.89,142011.89,18.78,1350.55,106.61,74.94,7.13,7970,92.5,1.66
+Long-only,-76.02,-76.02,-0.01,4521.41,-0.02,48.22,1.0,8616,100.0,0.0
