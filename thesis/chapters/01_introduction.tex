@@ -17,27 +17,63 @@ Accurate forecasting of day-ahead prices is therefore not merely an academic exe
 This thesis addresses the following central question:
 
 \begin{quote}
-\textit{Do weather variables significantly improve the accuracy of day-ahead electricity price forecasts for the French market, and if so, what is the economic value of that improvement?}
+\textit{Do weather variables significantly improve the accuracy of day-ahead
+electricity price forecasts for the French market, and does their contribution
+depend on the market regime?}
 \end{quote}
 
-This question is decomposed into three sub-questions:
+This question is decomposed into four sub-questions:
 
 \begin{enumerate}
-  \item Can machine learning models (Random Forest, XGBoost) substantially outperform a na\"{i}ve statistical benchmark on French day-ahead prices?
-  \item Does the addition of meteorological features (temperature, wind speed, solar radiation, Heating Degree Days, Weather Stress Index) produce a statistically significant improvement over a model built on market fundamentals alone?
-  \item Can the predictive improvement of these models be translated into economically meaningful returns through a day-ahead directional trading strategy?
+  \item Can machine learning models (Random Forest, XGBoost) substantially
+  outperform a na\"{i}ve statistical benchmark on French day-ahead prices?
+  \item Does the addition of meteorological features (temperature, wind speed,
+  solar radiation, Heating Degree Days, Weather Stress Index) produce a
+  statistically significant improvement over a model built on market
+  fundamentals alone — and is this result stable across market regimes?
+  \item Does the marginal value of weather features differ between a stable
+  market regime (2024--25) and an extreme-stress regime (2022 energy crisis),
+  and what structural mechanisms explain any difference?
+  \item Can the predictive improvement of these models be translated into
+  economically meaningful returns through a day-ahead directional trading
+  strategy with realistic transaction costs?
 \end{enumerate}
 
 \section{Contribution}
 
-This thesis makes three contributions to the electricity price forecasting literature:
+This thesis makes four contributions to the electricity price forecasting
+literature:
 
 \begin{itemize}
-  \item \textbf{Comprehensive French dataset:} We assemble and publish a reproducible dataset spanning 2018--2025 that combines ENTSO-E generation and load data, ERA5 reanalysis weather data, cross-border flow data, and fuel price series. To our knowledge, this is one of the most complete publicly-sourced datasets for the French day-ahead market.
+  \item \textbf{Comprehensive French dataset:} We assemble and publish a
+  reproducible dataset spanning 2018--2025 that combines ENTSO-E generation
+  and load data, ERA5 reanalysis weather data, cross-border flow data, and
+  fuel price series. To our knowledge, this is one of the most complete
+  publicly-sourced datasets for the French day-ahead market.
 
-  \item \textbf{Rigorous ablation study:} We design a four-model experiment (A/B/C/D) that isolates the marginal contribution of weather features using a Diebold-Mariano test with Harvey-Leybourne-Newbold correction. The result — that weather does not significantly improve forecast accuracy in the enriched fundamental model — is a non-trivial finding that contributes to the understanding of information redundancy in electricity price drivers.
+  \item \textbf{Rigorous weather ablation study with regime comparison:}
+  We design a four-model experiment (A/B/C/D) isolating the marginal
+  contribution of weather features using a Diebold-Mariano test with
+  Harvey-Leybourne-Newbold correction, applied to two out-of-sample periods.
+  Our key finding is that weather is statistically non-significant in a stable
+  regime ($p = 0.572$) but highly significant in the 2022 energy crisis
+  ($p < 0.001$, DM $= -13.27$). We explain this regime-dependence through
+  the \textit{information redundancy hypothesis}: in normal conditions, the
+  RTE load forecast and TTF gas prices subsume the weather signal; in crisis
+  conditions, the gas supply shock breaks this redundancy.
 
-  \item \textbf{Day-ahead executable trading backtest:} We implement a directional trading strategy using an economically coherent signal design grounded in the actual mechanics of the EPEX SPOT day-ahead auction, with realistic transaction cost scenarios drawn from the 2024 EPEX fee schedule.
+  \item \textbf{2022 energy crisis as a natural experiment:} We exploit the
+  2022 French-European energy crisis — characterised by simultaneously low
+  nuclear availability ($\approx$40\%) and extreme gas prices — as a stress
+  test of the weather redundancy hypothesis. This provides the first formal
+  evaluation of regime-dependence in the weather-price relationship for the
+  French market.
+
+  \item \textbf{Day-ahead executable trading backtest:} We implement a
+  directional trading strategy using an economically coherent signal design
+  grounded in the actual mechanics of the EPEX SPOT day-ahead auction, with
+  dead-band filtering and three realistic transaction cost scenarios drawn
+  from the 2024 EPEX fee schedule.
 \end{itemize}
 
 \section{Structure of the Thesis}

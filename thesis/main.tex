@@ -149,14 +149,40 @@
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-This thesis investigates whether weather variables significantly improve day-ahead electricity price forecasting for the French market (EPEX SPOT France) using machine learning models. We build a comprehensive dataset spanning January 2018 to April 2025, combining hourly price and generation data from the ENTSO-E Transparency Platform with ERA5 reanalysis weather data, cross-border flow data, and fuel price series (TTF natural gas, ARA coal, EU ETS carbon allowances).
+This thesis investigates whether weather variables significantly improve
+day-ahead electricity price forecasting for the French market (EPEX SPOT
+France) using machine learning models. We build a comprehensive dataset
+spanning January 2018 to April 2025, combining hourly price and generation
+data from the ENTSO-E Transparency Platform with ERA5 reanalysis weather data,
+cross-border flow data, and fuel price series (TTF natural gas, ARA coal).
 
-Four models are compared: a na\"{i}ve lag-168h benchmark (Model A), a Random Forest without weather features (Model B), a Random Forest with full weather features (Model C), and an XGBoost model with weather features (Model D). Models are evaluated on a strict out-of-sample test set covering May 2024 to April 2025 (8,640 hours).
+Four models are compared: a na\"{i}ve lag-168h benchmark (Model A), a Random
+Forest without weather features (Model B), a Random Forest with full weather
+features (Model C), and an XGBoost model with weather features (Model D).
+Models are evaluated on two strict out-of-sample test sets: a stable-regime
+period (May 2024 -- April 2025, 8,640 hours) and the 2022 energy crisis
+(full year 2022, 8,760 hours).
 
-Our central finding is that weather features do not significantly improve forecast accuracy over the enriched fundamental model, as confirmed by a Diebold-Mariano test (p = 0.572). We attribute this to the fact that fuel prices (TTF gas) and nuclear availability already implicitly encode meteorological information in the French market context. Both Random Forest models achieve a Mean Absolute Error of approximately 16.9 EUR/MWh and R$^2 \approx 0.776$, representing a 49\% reduction in error over the na\"{i}ve benchmark. A day-ahead directional trading backtest confirms the economic value of these forecasts, with RF models generating net profits of approximately 136,700 EUR/MW over the test period with a maximum drawdown ten times smaller than the na\"{i}ve strategy.
+Our central finding is that \textit{the marginal value of weather features
+is regime-dependent}. In the stable 2024--25 test period, weather does not
+significantly improve forecast accuracy over the enriched fundamental model
+(Diebold-Mariano test: $p = 0.572$) — we attribute this to information
+redundancy, whereby the RTE load forecast and TTF gas prices already encode
+the meteorological signal implicitly. However, in the 2022 energy crisis, the
+same test yields $p < 0.001$ (DM statistic $= -13.27$): weather becomes
+highly significant when the gas supply shock decouples TTF from local
+temperature and nuclear constraints amplify the demand-price relationship.
+Both Random Forest models achieve MAE $\approx$ 16.9 EUR/MWh and
+R$^2 \approx 0.776$ in the stable period, representing a 49\% reduction in
+error over the na\"{i}ve benchmark. A day-ahead directional trading backtest
+confirms the economic value of these forecasts, with RF models generating net
+profits of approximately 136,700 EUR/MW with a Sharpe ratio of 19.5 and a
+maximum drawdown ten times smaller than the na\"{i}ve strategy.
 
 \vspace{1em}
-\noindent\textbf{Keywords:} electricity price forecasting, day-ahead market, EPEX SPOT France, Random Forest, XGBoost, weather features, Diebold-Mariano test, feature engineering, trading backtest.
+\noindent\textbf{Keywords:} electricity price forecasting, day-ahead market,
+EPEX SPOT France, Random Forest, XGBoost, weather features, Diebold-Mariano
+test, information redundancy, 2022 energy crisis, trading backtest.
 
 % ── Acknowledgements ─────────────────────────────────────────
 \chapter*{Acknowledgements}

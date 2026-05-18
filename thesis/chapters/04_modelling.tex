@@ -173,21 +173,21 @@ Figure~\ref{fig:feat_imp} shows the top 20 features by MDI importance for Model 
 \end{figure}
 
 Price lags dominate the ranking. The 24-hour lag alone accounts for
-approximately 22.5\% of total MDI importance — the single most informative
-feature — followed by the 24-hour rolling mean (16.2\%), 168-hour rolling mean
-(10.8\%), 48-hour lag (9.6\%), and 168-hour lag (9.9\%). Collectively, price
-lags and rolling means account for over 64\% of total importance. The primacy
+approximately 20.7\% of total MDI importance — the single most informative
+feature — followed by the 24-hour rolling mean (14.3\%), 48-hour lag (12.4\%),
+168-hour rolling mean (11.9\%), and 168-hour lag (10.4\%). Collectively, price
+lags and rolling means account for nearly 70\% of total importance. The primacy
 of the 24-hour lag reflects that the same-hour price from the previous day is
 the best single predictor of tomorrow's same-hour price at the day-ahead
 horizon, consistent with the strong daily autocorrelation of electricity prices.
-The 168-hour lag captures the weekly seasonality but is ranked below the
-24-hour lag and both rolling means, suggesting that medium-term price context
-(rolling means) carries more information than the specific weekly anchor point.
+The 168-hour lag captures weekly seasonality but ranks fifth, suggesting that
+recent price context (rolling means and the 48-hour anchor) carries more
+information than the specific weekly price level.
 
-Among fundamental variables, TTF natural gas price (9.1\%) and ARA coal
+Among fundamental variables, TTF natural gas price (8.3\%) and ARA coal
 (6.0\%) rank prominently, reflecting the dominant role of fuel costs in
 setting the price of dispatchable thermal generation. Nuclear availability
-ratio ($\approx$2.1\%) also appears among the top features, consistent with
+ratio ($\approx$1.9\%) also appears among the top features, consistent with
 its critical role in French price formation.
 
 Among the weather features (highlighted in red), temperature and wind speed
@@ -280,6 +280,18 @@ sequential boosting mechanism is more sensitive to regime shifts, plausibly
 because it over-weights the extreme 2021-era observations in its later boosting
 rounds. The RF models' comparatively smaller performance degradation reinforces
 their suitability as a robust baseline for production use.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{model_comparison_2022_vs_2024.png}
+  \caption{Model performance across the two test regimes: 2022 energy crisis
+    (red) vs.\ 2024--25 stable period (blue). Left: MAE (EUR/MWh); right:
+    R$^2$. The DM test for weather contribution (C vs B) switches from
+    non-significant ($p=0.572$) in the stable period to highly significant
+    ($p<0.001$) in the crisis, confirming the regime-dependence of the
+    weather effect.}
+  \label{fig:comparison_2022}
+\end{figure}
 
 \paragraph{Interpretation.} Taken together, the two validation exercises
 (2024--25 and 2022) reveal that the role of weather in French day-ahead price
