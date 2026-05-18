@@ -4,62 +4,239 @@
 \chapter{Discussion}
 \label{chap:discussion}
 
-\section{The Central Finding: Weather Is Not Significant}
+\section{The Central Finding: Weather Is Regime-Dependent}
 
-The non-significance of weather features in the French day-ahead electricity price forecasting context ($p = 0.572$, DM test) is the thesis's primary empirical contribution. This result runs counter to the intuitive expectation that temperature, wind, and solar radiation — which directly drive electricity demand and renewable generation supply — should be informative for price prediction. Understanding \textit{why} weather adds no marginal value is at least as important as the finding itself.
+The thesis's primary empirical contribution is a finding with two parts that
+must be understood together. In the stable 2024--25 test period, weather
+features add no statistically significant forecast improvement over a
+fundamental-only Random Forest ($p = 0.572$, DM = $-0.565$). In the 2022
+energy crisis, the same comparison yields $p < 0.001$ (DM = $-13.27$):
+weather is highly significant. The role of weather in French day-ahead
+electricity price forecasting is therefore not a binary yes/no question but a
+function of market regime.
+
+This result reconciles apparently contradictory intuitions. Weather obviously
+drives electricity demand and renewable supply, so one would expect it to
+matter for price forecasting. Yet in a market where price-setting fundamentals
+(TTF gas, nuclear availability) are explicitly modelled, weather information
+may be fully subsumed. The resolution is that the degree of subsumption depends
+on how tight the coupling between weather and fundamentals is — and this
+coupling changes under stress.
 
 \subsection{The Information Redundancy Hypothesis}
 
-We argue that the apparent paradox resolves once we recognise that weather information is already embedded in other features of the model:
+We argue that in stable market conditions, weather information is already
+embedded in other features of the model through three distinct channels:
 
-\textbf{Load forecast as a temperature proxy.} RTE publishes an hourly load forecast for D+1 that is computed using a proprietary model incorporating, among other inputs, temperature forecasts. When we include this load forecast in the feature matrix, we implicitly condition on a temperature-adjusted demand estimate. The raw temperature variable then adds no marginal information beyond what is already captured by RTE's own weather-informed demand forecast.
+\textbf{Load forecast as a temperature proxy.} RTE publishes an hourly load
+forecast for D+1 that is computed using a proprietary model incorporating
+temperature forecasts \citep{rte2024}. When we include this load forecast in
+the feature matrix, we implicitly condition on a temperature-adjusted demand
+estimate. The raw temperature variable then adds no marginal information beyond
+what is already captured by RTE's own weather-informed demand forecast. The
+high correlation between HDD and load forecast ($r > 0.60$, visible in
+Figure~\ref{fig:corr_matrix}) confirms this redundancy.
 
-\textbf{TTF gas price as an energy weather proxy.} European gas prices respond to heating demand aggregated across all gas-consuming countries. A cold spell in France simultaneously increases French electricity demand and increases gas demand across Europe, pushing TTF higher. A model that includes TTF as a feature therefore already incorporates a pan-European temperature signal through the lens of the commodity market.
+\textbf{TTF gas price as an energy weather proxy.} European gas prices respond
+to heating demand aggregated across all gas-consuming countries. A cold spell
+in France simultaneously increases French electricity demand and increases gas
+demand across Europe, pushing TTF higher. A model that includes TTF therefore
+already incorporates a pan-European temperature signal through the lens of the
+commodity market. This indirect transmission channel is consistent with the
+literature on weather-adjusted fuel prices \citep{lindberg2019}: commodity
+markets aggregate weather information efficiently when the weather-commodity
+relationship is stable.
 
-\textbf{Nuclear availability dominance.} In France, the availability of the nuclear fleet explains a disproportionate share of price variance relative to other European markets. With nuclear availability as an explicit feature, the model's residual variance is already low, leaving little room for weather variables to contribute further.
+\textbf{Nuclear availability dominance.} In France, the availability of the
+nuclear fleet explains a disproportionate share of price variance relative to
+other European markets. In 2022, nuclear availability fell to $\approx$40\%,
+creating price variance that no weather feature can explain (the outages were
+driven by corrosion-related technical failures, not weather). With nuclear
+availability as an explicit feature, the model's residual variance is already
+low in stable conditions, leaving little room for weather variables to
+contribute further.
+
+\subsection{Why the Crisis Breaks Redundancy}
+
+The 2022 result ($p < 0.001$) reveals that the information redundancy is
+not unconditional. Three mechanisms can explain why weather becomes significant
+in a crisis regime:
+
+\textbf{Decoupling of TTF and local temperature.} During the 2021--2023 gas
+supply crisis, TTF prices were predominantly driven by geopolitical supply
+shocks (Russian gas curtailments) rather than weather. The normal correlation
+between cold temperatures and TTF rises was disrupted: prices were high
+regardless of the weather. In this environment, the residual temperature effect
+on electricity demand could not be subsumed by TTF — it had to be captured
+by the raw temperature variable directly. The information redundancy broke down
+because the mediating variable (TTF) lost its weather signal.
+
+\textbf{Nuclear constraint amplification.} With nuclear availability at 40\%,
+France had limited buffer capacity to absorb demand surges driven by cold
+weather. In normal conditions (nuclear at 70\%), a cold spell adds demand that
+nuclear can partially accommodate; with nuclear severely constrained, the same
+cold spell forces much higher dispatch of expensive gas and oil peakers,
+amplifying the price response. This non-linear amplification makes the direct
+temperature-price channel visible in the data.
+
+\textbf{Higher signal-to-noise ratio.} The 2022 crisis produced extreme price
+levels that created larger absolute prediction errors, but also larger
+differences between Model B and Model C: even a small absolute MAE improvement
+(0.73 EUR/MWh) is detectable by the DM test at the high absolute price levels
+of 2022. The test's statistical power to detect a given proportional effect
+is higher when the loss differential has a larger mean.
 
 \subsection{Implications for Forecasting Practice}
 
-This finding has a practical implication for electricity price forecasting practitioners: \textit{building a rich fundamental model that includes cross-border flows, fuel prices, and nuclear availability may be sufficient to capture the weather signal implicitly}. The additional cost and complexity of integrating real-time weather forecasts from ERA5 or NWP models may not be justified in the French market context, provided that these fundamentals are available.
+This finding has concrete practical implications:
 
-This result may not generalise to markets with higher renewable penetration. In Germany, where wind and solar represent over 50\% of generation, the direct impact of weather on supply is much larger and is less likely to be fully captured by TTF prices or load forecasts alone. Testing this hypothesis in the German market is a natural extension of this work.
+\textit{Stable markets:} Building a rich fundamental model that includes
+cross-border flows, fuel prices, and nuclear availability is sufficient to
+capture the weather signal implicitly in the French market. The additional cost
+and complexity of integrating real-time weather forecasts from ERA5 or NWP
+models may not be justified, provided that the load forecast and fuel price
+data are available. This lowers the barrier to entry for model builders
+without proprietary meteorological data infrastructure.
 
-\section{XGBoost Underperformance}
+\textit{Crisis markets:} When TTF-temperature co-movement decouples (e.g.,
+during geopolitical supply shocks) or when nuclear availability is severely
+constrained, weather features provide statistically and economically significant
+value. Market participants entering production forecasting should build
+weather-aware models as a contingency, even if weather features are switched off
+during normal regimes. A regime-switching model that activates or de-weights
+weather features based on nuclear availability and TTF volatility is a
+promising direction for future work.
 
-The underperformance of XGBoost (Model D) relative to Random Forest (Models B and C) is a secondary finding that deserves explanation. With default hyperparameters, XGBoost achieves MAE of 19.14 EUR/MWh and R$^2$ of 0.659, compared to approximately 16.94 EUR/MWh and 0.776 for the Random Forests.
+\textit{Cross-market applicability:} This result may not generalise to markets
+with higher renewable penetration. In Germany, wind and solar represent over
+50\% of generation, and the direct impact of weather on supply is much larger.
+The indirect TTF channel is less likely to fully capture the wind-solar
+generation effect in Germany than in France, suggesting that weather features
+would be more valuable in the German market context. Testing this hypothesis
+in a comparative France-Germany study is a natural extension.
 
-XGBoost's sequential boosting mechanism may be more susceptible to the extreme price observations present in the training set (2022 crisis prices above 1,000 EUR/MWh). Each boosting iteration gives elevated weight to poorly-fitted observations; in the presence of genuine outliers driven by extraordinary events, this can lead to overfitting to the crisis regime at the expense of normal-market performance.
+\section{XGBoost Underperformance and Its Implications}
 
-The solution would be to tune XGBoost's hyperparameters using time-series cross-validation — in particular the learning rate, regularisation terms ($\lambda$, $\alpha$), and subsampling rates. A Bayesian hyperparameter search with a temporal validation strategy could plausibly close or reverse the performance gap between XGBoost and RF. This is identified as a direction for future work.
+The underperformance of XGBoost (Model D) relative to Random Forest (Models B
+and C) is a secondary finding that deserves careful interpretation. With our
+hyperparameters, XGBoost achieves MAE of 19.14 EUR/MWh and R$^2$ of 0.659 in
+the stable period, compared to approximately 16.94 EUR/MWh and 0.776 for the
+Random Forests. In the 2022 crisis, the gap widens further (76.32 vs 66.55
+EUR/MWh). Two factors explain this pattern.
+
+First, XGBoost's sequential boosting mechanism assigns higher weight to
+poorly-fitted observations in each iteration. In the presence of genuine
+outliers driven by extraordinary events (the 2022 nuclear-gas crisis), this
+can lead to overfitting on crisis-era residuals at the expense of
+normal-market performance. Random Forests average over bootstrap samples,
+which is more robust to distributional shifts across regimes.
+
+Second, the hyperparameters used here (500 estimators, $\eta = 0.05$, max
+depth 6) were chosen to be reasonable defaults but were not tuned to the
+specific loss landscape of our data. The Random Forest's hyperparameters
+(500 trees, max depth 10, min leaf 5) were similarly not optimised, but RF
+is known to be less sensitive to hyperparameter choice than XGBoost, whose
+performance depends more critically on the learning rate, regularisation
+terms ($\lambda$, $\alpha$), and subsampling rates. A Bayesian hyperparameter
+search with time-series cross-validation could plausibly close or reverse the
+performance gap between XGBoost and RF, and is a priority for future work.
+
+The implication for practitioners is that the comparison between RF and
+XGBoost reported here should \textit{not} be interpreted as evidence that RF
+is inherently superior to boosted trees for electricity price forecasting. The
+result reflects our specific configuration. The comparison between Model B and
+Model C (RF with vs without weather), however, is robust: both models use the
+same architecture and differ only in the feature set, making the DM test a
+clean ablation study.
 
 \section{Limitations}
+\label{sec:limitations}
 
-\subsection{Static Model}
+\subsection{Static Model and Distribution Shift}
 
-Both RF and XGBoost are trained once on data from 2018--2024 and applied without retraining to the May 2024--April 2025 test period. In a production forecasting environment, the model would need to be retrained periodically (e.g., monthly or quarterly) to adapt to structural market changes — the progressive increase in renewable penetration, changes in interconnection capacities, and shifts in nuclear fleet composition. A walk-forward expanding-window retraining scheme would provide a more realistic assessment of production performance.
+Both RF and XGBoost are trained once on data from 2018--2024 and applied
+without retraining to the test period. The training set includes the 2022 crisis
+regime, while the test set covers a normalised post-crisis regime. In principle,
+the model trained on crisis-level prices (occasionally exceeding 1{,}000
+EUR/MWh) may not generalise optimally to a test regime where prices rarely
+exceed 200 EUR/MWh. A walk-forward expanding-window retraining scheme — in
+which the model is retrained monthly using all data available up to that point
+— would provide a more realistic assessment of production performance and is
+a prerequisite for operational deployment.
 
 \subsection{Price Spike Forecasting}
 
-Both models systematically underestimate extreme price events. During the test period, hours with prices above 200 EUR/MWh represent fewer than 1\% of observations but contribute disproportionately to RMSE. Point forecasting models trained on MAE or RMSE loss functions implicitly target the conditional mean, which is pulled toward the bulk of the distribution. Dedicated spike detection — using a two-stage model (classifier for spike occurrence + regression for spike magnitude) or quantile regression — could improve performance in the tails. This is particularly relevant for risk management applications.
+Both models systematically underestimate extreme price events. During the
+test period, hours with prices above 200 EUR/MWh contribute disproportionately
+to RMSE despite representing fewer than 1\% of observations. Point forecasting
+models trained on MAE or RMSE loss functions target the conditional mean, which
+is pulled toward the bulk of the distribution. Dedicated spike detection
+approaches — including two-stage models (a classifier for spike probability
+followed by a spike magnitude regression) or quantile regression forests for
+prediction intervals — could substantially improve tail performance. This is
+particularly important for risk management applications where exposure to
+extreme hours drives the economic value of the forecast.
 
-\subsection{Negative Price Handling}
+\subsection{Negative Price Dynamics}
 
-The French market has seen a growing frequency of negative prices, particularly in spring and summer months when solar generation peaks and nuclear baseload cannot be curtailed rapidly. Our sMAPE metric handles negative prices correctly, but the RF models may not capture the specific dynamics of price formation below zero (where generators are paying consumers to absorb excess supply) as well as they capture the positive price regime.
+Negative prices represent approximately 3--8\% of hours in recent years
+(Figure~\ref{fig:price_dist}). Our sMAPE metric handles negative prices
+correctly, but the RF models may not accurately represent the specific dynamics
+of price formation below zero, where the mechanism shifts from demand-driven
+to supply-push (inflexible generators paying consumers to absorb excess
+generation). A dedicated modelling approach for the negative-price regime is
+a natural extension.
 
-\subsection{Single Test Period}
+\subsection{Missing EU ETS Carbon Allowances}
 
-Drawing conclusions from a single 12-month out-of-sample period is inherently limited. The May 2024--April 2025 period represents a specific market regime that may not be representative of the full range of conditions the model will encounter in deployment. Expanding the test window or applying a rolling out-of-sample evaluation over multiple years would provide a more robust assessment.
+EU ETS carbon allowance prices (EUA) were not included as a standalone feature.
+EUA prices directly raise the operating cost of gas and coal generation through
+the carbon component of the generation cost. Their exclusion may reduce the
+model's accuracy during periods of high carbon price volatility, which have
+coincided with some of the most extreme electricity price episodes (2021--2022).
+The TTF-coal spread partially proxies for EUA (as all three series moved
+together during the crisis), but a more complete fundamental model would include
+EUA explicitly.
+
+\subsection{Single Out-of-Sample Regime}
+
+The main test period (May 2024--April 2025) covers only one market regime.
+The 2022 robustness exercise provides an important second data point, but does
+not constitute a full walk-forward evaluation. The reliability of the
+statistical conclusions would be strengthened by testing on additional
+out-of-sample windows covering different nuclear availability levels, renewable
+penetration levels, and geopolitical conditions.
 
 \section{Future Research Directions}
 
 \begin{enumerate}
-  \item \textbf{Probabilistic forecasting:} Replace point forecasts with prediction intervals or full predictive distributions (e.g., using Quantile Regression Forests or conformal prediction). Probabilistic forecasts are increasingly demanded by market participants for risk management and option pricing.
+  \item \textbf{Regime-switching weather model:} Building an explicit
+  regime-switching mechanism that activates weather features when nuclear
+  availability falls below a threshold (e.g., 0.55) or when TTF volatility
+  exceeds a threshold, combining the efficiency of the fundamental model in
+  stable regimes with the accuracy of the weather-augmented model in stress
+  regimes.
 
-  \item \textbf{Multi-horizon forecasting:} Extend from hour-ahead to 2-day-ahead and beyond. Longer horizons require either recursive (error-accumulating) or direct (horizon-specific) strategies.
+  \item \textbf{Probabilistic forecasting:} Replace point forecasts with
+  prediction intervals or full predictive distributions using Quantile
+  Regression Forests or conformal prediction. Probabilistic forecasts are
+  increasingly demanded by market participants for option pricing and risk
+  management.
 
-  \item \textbf{Comparative study: France vs Germany:} Test whether weather features are more significant in Germany, where renewable penetration is substantially higher. A rigorous cross-country comparison would contribute to the understanding of how market structure mediates the relationship between weather and price predictability.
+  \item \textbf{Comparative France--Germany study:} Test whether weather
+  features are more significant in Germany, where renewable penetration is
+  substantially higher and the indirect TTF-weather channel is less dominant.
+  Such a comparison would directly test our information redundancy hypothesis
+  in a different market structure.
 
-  \item \textbf{XGBoost hyperparameter optimisation:} A systematic Bayesian search with temporal cross-validation could close the performance gap between XGBoost and Random Forest, potentially identifying a superior model.
+  \item \textbf{XGBoost hyperparameter optimisation:} A systematic Bayesian
+  search with temporal cross-validation, using a custom time-aware split
+  strategy (e.g., 6-fold expanding window), could close the performance gap
+  between XGBoost and RF.
 
-  \item \textbf{Deep learning architectures:} LSTM and Transformer-based models have shown promise on energy time series with long-range dependencies. Comparing these to our RF baseline within the same experimental framework would be a natural extension.
+  \item \textbf{Transformer and LSTM architectures:} Long Short-Term Memory
+  networks and Transformer-based models have demonstrated promise on energy
+  time series with long-range dependencies \citep{lago2018}. Comparing these
+  to our RF baseline within the same experimental framework — including the
+  same DM test procedure — would be a natural extension.
 \end{enumerate}

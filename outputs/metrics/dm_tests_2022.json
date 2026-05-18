@@ -1,0 +1,26 @@
+{
+  "C_vs_B_2022": {
+    "description": "Weather vs no-weather (C vs B)",
+    "dm_stat": -13.2731,
+    "p_value": 0.0,
+    "significant_5pct": true
+  },
+  "C_vs_A_2022": {
+    "description": "RF-weather vs naive (C vs A)",
+    "dm_stat": -6.4805,
+    "p_value": 0.0,
+    "significant_5pct": true
+  },
+  "B_vs_A_2022": {
+    "description": "RF-no-weather vs naive (B vs A)",
+    "dm_stat": -5.6819,
+    "p_value": 0.0,
+    "significant_5pct": true
+  },
+  "D_vs_C_2022": {
+    "description": "XGBoost vs RF-weather (D vs C)",
+    "dm_stat": 26.5692,
+    "p_value": 0.0,
+    "significant_5pct": true
+  }
+}

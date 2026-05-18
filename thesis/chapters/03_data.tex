@@ -42,7 +42,7 @@ Fuel prices are retrieved from public market data sources:
 
 \begin{itemize}
   \item \textbf{TTF natural gas} (EUR/MWh): the Title Transfer Facility day-ahead price, the European gas benchmark. TTF prices are the primary determinant of the marginal cost of gas-fired generation, which is frequently the price-setting technology in France outside nuclear baseload hours.
-  \item \textbf{ARA coal} (EUR/tonne): the price of thermal coal delivered to Amsterdam-Rotterdam-Antwerp. Together with EU ETS carbon allowance prices, coal prices determine the Clean Dark Spread and the competitiveness of coal against gas.
+  \item \textbf{ARA coal} (EUR/tonne): the price of thermal coal delivered to Amsterdam-Rotterdam-Antwerp. Together with EU ETS carbon allowance costs, coal prices determine the Clean Dark Spread and the relative competitiveness of coal and gas-fired generation. EU ETS carbon allowance prices (EUA) are not retrieved as a standalone feature in this study: their incremental price signal is largely embedded in the TTF-coal spread, and the two fuel price variables together capture the marginal-cost information relevant for gas and coal dispatch. Omitting EUA is a limitation acknowledged in Chapter~\ref{chap:discussion}.
 \end{itemize}
 
 \subsection{Price Statistics}
@@ -110,6 +110,12 @@ Beyond the raw ERA5 variables, we construct three derived features specifically 
 \end{equation}
 where $T_t$ is the spatially-averaged 2m temperature at hour $t$. The threshold of 17\textdegree C is the standard used by RTE for French demand modelling \citep{rte2024}, reflecting the predominantly electric heating stock. This is higher than the 15\textdegree C threshold commonly used in Germany, consistent with France's stronger thermosensitivity.
 
+\textbf{Cooling Degree Days (CDD):}
+\begin{equation}
+  \text{CDD}_t = \max(0,\ T_t - 23)
+\end{equation}
+where the 23\textdegree C threshold captures the onset of air-conditioning demand in France. CDD values are near zero for the vast majority of hours in the sample (mean $= 0.15$\textdegree C-hours), reflecting France's limited cooling load relative to its heating load.
+
 \textbf{Wind Power Proxy:}
 \begin{equation}
   \text{wind\_proxy}_t = v_t^3
@@ -155,7 +161,100 @@ Figure~\ref{fig:price_vs_temperature} shows the relationship between temperature
   \label{fig:weather_stress}
 \end{figure}
 
+\section{Descriptive Statistics}
+\label{sec:descriptive}
+
+Table~\ref{tab:desc_stats} reports summary statistics for the key variables in
+the full sample (January 2018 -- April 2025, $n = 64{,}056$ hourly
+observations). The feature matrix exhibits the distributional properties
+typical of electricity market data: right-skewed price and generation variables,
+highly leptokurtic fuel prices driven by the 2022 crisis, and near-zero
+variability in the cooling degree day variable reflecting France's limited
+summer cooling demand.
+
+\begin{table}[H]
+  \centering
+  \small
+  \caption{Summary statistics — full sample (Jan 2018 -- Apr 2025, $n=64{,}056$)}
+  \label{tab:desc_stats}
+  \begin{tabular}{lrrrrrrr}
+    \toprule
+    \textbf{Variable} & \textbf{Mean} & \textbf{Std} & \textbf{Min}
+      & \textbf{P25} & \textbf{Median} & \textbf{P75} & \textbf{Max} \\
+    \midrule
+    \multicolumn{8}{l}{\textit{Target and price lags (EUR/MWh)}} \\
+    Day-ahead price              & 94.3 & 102.6 & $-$135.0 &  36.7 &  59.0 & 109.7 & 2{,}987.8 \\
+    Price lag 24h                & 94.3 & 102.6 & $-$135.0 &  36.6 &  59.0 & 109.7 & 2{,}987.8 \\
+    Price lag 168h               & 94.2 & 102.7 & $-$135.0 &  36.6 &  58.9 & 109.7 & 2{,}987.8 \\
+    Rolling mean 24h             & 94.3 &  97.9 &  $-$10.8 &  38.2 &  58.7 & 107.3 &   747.9 \\
+    Rolling mean 168h            & 94.3 &  94.7 &     5.6  &  38.8 &  59.2 & 101.8 &   656.0 \\
+    \midrule
+    \multicolumn{8}{l}{\textit{Demand and generation (MW)}} \\
+    Load forecast                & 51{,}609 & 11{,}356 & 27{,}650 & 43{,}050 & 49{,}800 & 59{,}200 & 95{,}150 \\
+    Nuclear generation           & 39{,}668 &  7{,}438 & 19{,}179 & 34{,}925 & 40{,}009 & 44{,}239 & 58{,}432 \\
+    Nuclear availability ratio   &   0.63 &   0.12 &    0.30 &    0.55 &    0.64 &    0.70 &    0.93 \\
+    Gas generation               &  3{,}592 &  2{,}440 &       0 &  1{,}548 &  3{,}218 &  5{,}116 &  9{,}726 \\
+    Wind generation              &  4{,}263 &  3{,}196 &       0 &  1{,}860 &  3{,}207 &  5{,}846 & 18{,}120 \\
+    Solar generation             &  1{,}841 &  2{,}722 &       0 &       0 &     255 &  3{,}079 & 17{,}928 \\
+    \midrule
+    \multicolumn{8}{l}{\textit{Fuel prices}} \\
+    TTF natural gas (EUR/MWh)    &  41.8 &  39.2 &   4.6 &  18.3 &  29.9 &  43.5 & 219.7 \\
+    ARA coal (EUR/t)             & 145.6 &  98.6 &  47.3 &  83.7 & 115.3 & 159.7 & 430.4 \\
+    \midrule
+    \multicolumn{8}{l}{\textit{Weather variables}} \\
+    Temperature 2m (\textdegree C) & 12.6 &  6.0 &  $-$5.4 &   7.9 &  11.9 &  17.1 &  31.7 \\
+    Wind speed 10m (m/s)         &  2.8 &  1.5 &   0.0 &   1.7 &   2.6 &   3.7 &   8.8 \\
+    HDD (\textdegree C-hours)    &  5.4 &  4.7 &   0.0 &   0.0 &   5.1 &   9.1 &  22.4 \\
+    CDD (\textdegree C-hours)    &  0.2 &  0.7 &   0.0 &   0.0 &   0.0 &   0.0 &   9.7 \\
+    Weather Stress Index         &  2.6 &  5.1 &   0.0 &   0.0 &   1.5 &   3.3 & 165.4 \\
+    \midrule
+    \multicolumn{8}{l}{\textit{Cross-border net flows (MW; positive = export from France)}} \\
+    France -- Germany            &  1{,}022 & 1{,}755 & $-$4{,}916 & $-$287 & 1{,}148 & 2{,}470 & 5{,}223 \\
+    France -- Spain              &    331 & 1{,}987 & $-$3{,}772 & $-$1{,}689 &   842 & 2{,}175 & 5{,}567 \\
+    France -- UK                 &  1{,}192 & 1{,}655 & $-$3{,}971 &    326 & 1{,}614 & 2{,}033 & 4{,}089 \\
+    France -- Belgium            &    263 & 1{,}571 & $-$5{,}752 &   $-$944 &   216 & 1{,}443 & 5{,}470 \\
+    \bottomrule
+    \multicolumn{8}{l}{\small Missing values: TTF and ARA coal have 691 missing (1.1\%) at the end of the series} \\
+    \multicolumn{8}{l}{\small (April 2025); all other features have $<$0.2\% missing. See Section~\ref{sec:split}.} \\
+  \end{tabular}
+\end{table}
+
+Several distributional features are noteworthy. First, the day-ahead price
+has a mean of 94.3 EUR/MWh but a maximum of 2{,}988 EUR/MWh, consistent with
+the 2022 crisis spikes visible in Figure~\ref{fig:price_series}. Second, the
+nuclear availability ratio ranges from 0.30 to 0.93 across the sample,
+reflecting both planned maintenance cycles and the exceptional corrosion-related
+shutdown period of 2022. Third, TTF gas prices exhibit a skewness of 2.19 and
+a maximum of 219.7 EUR/MWh, driven by the 2022 gas supply shock. Fourth, the
+Weather Stress Index has a skewness of 10.71 and a long tail, consistent with
+rare but extreme cold-and-calm episodes. Fifth, cross-border flows span
+a wide range from large imports to large exports, reflecting France's role as
+a swing exporter under normal nuclear conditions.
+
+Figure~\ref{fig:corr_matrix} shows the pairwise Pearson correlation matrix for
+the numerical features. The highest correlations with the day-ahead price are
+observed for TTF gas price ($r = 0.78$), ARA coal ($r = 0.72$), and the price
+lags ($r > 0.80$). Weather variables correlate moderately with price: HDD
+($r \approx 0.20$) and temperature ($r \approx -0.18$). Notably, nuclear
+availability ratio and load forecast also correlate substantially with price
+($r \approx -0.35$ and $r \approx 0.45$, respectively), consistent with their
+role as price drivers. The high mutual correlations between weather variables
+(temperature, HDD, WSI) and the load forecast ($r > 0.60$) illustrate the
+information redundancy that underlies our central finding.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{correlation_matrix.png}
+  \caption{Pairwise Pearson correlation matrix for the 20 most important
+    numerical features (full sample, 2018--2025). Colour scale: red = positive,
+    blue = negative. The high correlations between weather variables and the
+    load forecast ($r > 0.60$) illustrate why adding raw weather features
+    provides limited marginal information once the load forecast is included.}
+  \label{fig:corr_matrix}
+\end{figure}
+
 \section{Train / Test Split}
+\label{sec:split}
 
 A strict temporal split is applied to prevent data leakage. The model is trained on all hours from January 2018 to April 2024, and evaluated on the out-of-sample test set from May 2024 to April 2025 (12 months, 8,640 hours). No information from the test period is used in feature construction, model selection, or hyperparameter tuning.
 

@@ -172,9 +172,123 @@ Figure~\ref{fig:feat_imp} shows the top 20 features by MDI importance for Model 
   \label{fig:feat_imp}
 \end{figure}
 
-Price lags dominate the ranking, with the 168-hour lag, 168-hour rolling mean, and 24-hour rolling mean occupying the top positions. This confirms the strong weekly autocorrelation of electricity prices and the importance of capturing recent price history. Among fundamental variables, the TTF natural gas price and load forecast rank prominently. Nuclear availability ratio also ranks among the top features, consistent with its critical role in French price formation.
+Price lags dominate the ranking. The 24-hour lag alone accounts for
+approximately 22.5\% of total MDI importance — the single most informative
+feature — followed by the 24-hour rolling mean (16.2\%), 168-hour rolling mean
+(10.8\%), 48-hour lag (9.6\%), and 168-hour lag (9.9\%). Collectively, price
+lags and rolling means account for over 64\% of total importance. The primacy
+of the 24-hour lag reflects that the same-hour price from the previous day is
+the best single predictor of tomorrow's same-hour price at the day-ahead
+horizon, consistent with the strong daily autocorrelation of electricity prices.
+The 168-hour lag captures the weekly seasonality but is ranked below the
+24-hour lag and both rolling means, suggesting that medium-term price context
+(rolling means) carries more information than the specific weekly anchor point.
 
-Among the weather features (highlighted in red), temperature and wind speed appear in the top 20 but with lower importance than price lags or TTF. The Weather Stress Index ranks lower still. This pattern is consistent with the DM test result: while weather variables do contain information about electricity prices, this information is largely already captured by the load forecast (which implicitly encodes temperature demand effects) and by TTF gas prices (which reflect the energy content of the commodity affected by weather).
+Among fundamental variables, TTF natural gas price (9.1\%) and ARA coal
+(6.0\%) rank prominently, reflecting the dominant role of fuel costs in
+setting the price of dispatchable thermal generation. Nuclear availability
+ratio ($\approx$2.1\%) also appears among the top features, consistent with
+its critical role in French price formation.
+
+Among the weather features (highlighted in red), temperature and wind speed
+appear in the top 20 but with substantially lower importance than price lags
+or TTF. All weather-derived features combined (temperature, HDD, CDD, wind
+speed, solar radiation, precipitation, wind power proxy, WSI) account for
+approximately 2.2\% of total MDI importance. This pattern is consistent with
+the DM test result: while weather variables do contain some information about
+electricity prices, this information is largely already captured by the load
+forecast (which implicitly encodes temperature-driven demand) and by TTF gas
+prices (which aggregate pan-European weather expectations through the commodity
+market).
+
+\section{Robustness: 2022 Energy Crisis Validation}
+\label{sec:validation2022}
+
+The 2024--25 test period represents a specific market regime: normalised prices,
+recovered nuclear availability ($\approx$65\%), and declining gas prices. A
+conclusion about the role of weather drawn from a single stable regime may not
+generalise. To test the robustness of our findings, we apply the same four
+models to the 2022 energy crisis, a regime characterised by historically
+extreme conditions: nuclear availability falling to $\approx$40\% (the lowest
+on record), TTF gas prices exceeding 200 EUR/MWh, and day-ahead electricity
+prices regularly surpassing 500--1{,}000 EUR/MWh.
+
+\textbf{Validation design:} Models A--D are retrained on data from January 2018
+to December 2021 (inclusive) and evaluated on the full year 2022 (8{,}760
+hours). No data from 2022 is used in training, preserving strict temporal
+separation.
+
+\begin{table}[H]
+  \centering
+  \caption{Out-of-sample performance — 2022 energy crisis ($n = 8{,}760$ hours)}
+  \label{tab:model_results_2022}
+  \begin{tabular}{lccccc}
+    \toprule
+    \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{sMAPE}
+      & \textbf{R$^2$} & \textbf{Hit\%} \\
+    & (EUR/MWh) & (EUR/MWh) & (\%) & & (\%) \\
+    \midrule
+    A --- Na\"{i}f lag-168h        & 72.74 & 111.11 & 29.2 & 0.419 & 57.4 \\
+    B --- RF without weather   & 67.28 & 106.76 & 25.3 & 0.464 & 58.9 \\
+    C --- RF with weather      & 66.55 & 105.63 & 25.0 & 0.475 & 58.7 \\
+    D --- XGBoost with weather & 76.32 & 123.54 & 28.0 & 0.282 & 61.5 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Diebold-Mariano tests — 2022 energy crisis (HLN-corrected, MAE-based)}
+  \label{tab:dm_2022}
+  \begin{tabular}{lccc}
+    \toprule
+    \textbf{Comparison} & \textbf{DM Stat.} & \textbf{$p$-value} & \textbf{Sig.} \\
+    \midrule
+    C vs B: does weather add value?       & $-13.27$ & $<0.001$ & *** \\
+    C vs A: RF-weather vs na\"{i}ve?          & $-6.48$  & $<0.001$ & *** \\
+    B vs A: RF-no-weather vs na\"{i}ve?       & $-5.68$  & $<0.001$ & *** \\
+    D vs C: XGBoost vs RF-weather?        & $+26.57$ & $<0.001$ & *** \\
+    \bottomrule
+    \multicolumn{4}{l}{\small *** $p<0.01$}
+  \end{tabular}
+\end{table}
+
+The 2022 results yield three important findings:
+
+\textbf{1. All models degrade sharply in the crisis.} The MAE of Model C
+rises from 16.94 EUR/MWh in the 2024--25 stable period to 66.55 EUR/MWh
+in 2022 — a nearly 4-fold increase. R$^2$ falls from 0.776 to 0.475. The
+crisis-driven price spikes (driven by unplanned nuclear outages and gas supply
+shocks) are largely idiosyncratic events not predictable from the feature
+matrix, which is consistent with the well-documented difficulty of forecasting
+extreme price events using regression-based methods.
+
+\textbf{2. Weather becomes statistically significant in the crisis.} The DM
+test comparing Model C to Model B yields $p < 0.001$ (stat = $-13.27$) in
+2022, in sharp contrast to $p = 0.572$ in the stable 2024--25 period. Model C
+reduces MAE by 0.73 EUR/MWh relative to Model B (66.55 vs 67.28). This
+reversal is the thesis's most novel empirical finding: the marginal value of
+weather features is \textit{regime-dependent}. In the 2022 crisis, cold
+temperatures and low wind directly amplified electricity prices above and beyond
+what fuel prices alone could explain, because nuclear-constrained supply left
+less headroom to absorb demand surges driven by extreme cold.
+
+\textbf{3. XGBoost degrades more than Random Forest.} XGBoost's MAE of 76.32
+EUR/MWh in 2022 represents a 14.6\% deterioration relative to Model C,
+compared to only 1.1\% in the stable period. This confirms that XGBoost's
+sequential boosting mechanism is more sensitive to regime shifts, plausibly
+because it over-weights the extreme 2021-era observations in its later boosting
+rounds. The RF models' comparatively smaller performance degradation reinforces
+their suitability as a robust baseline for production use.
+
+\paragraph{Interpretation.} Taken together, the two validation exercises
+(2024--25 and 2022) reveal that the role of weather in French day-ahead price
+forecasting is \textit{not fixed}: it is negligible in stable regimes where
+TTF and load forecasts fully encode the meteorological signal, but statistically
+significant in crisis regimes where nuclear constraints make the direct
+weather-demand channel visible above the fundamental price noise. A
+practitioner choosing whether to include weather features in their model must
+therefore condition on the expected market regime.
 
 \section{Discussion of the Central Result}
 

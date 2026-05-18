@@ -10,7 +10,21 @@ This thesis investigated whether weather variables significantly improve day-ahe
 
 \textbf{First, machine learning models substantially outperform the na\"{i}ve benchmark.} Both Random Forest variants reduce MAE by approximately 49\% (from 33.09 to $\approx$16.94 EUR/MWh) and increase R$^2$ from 0.16 to 0.78 on the out-of-sample test set (May 2024--April 2025). The Diebold-Mariano test confirms this improvement is highly statistically significant ($p < 0.001$). The performance is robust: both RF models record positive monthly Sharpe ratios in every month of the test period.
 
-\textbf{Second, weather features do not significantly improve forecast accuracy in the French market.} The Diebold-Mariano test comparing the RF with weather (Model C) to the RF without weather (Model B) fails to reject the null of equal predictive accuracy ($p = 0.572$). We attribute this to the information redundancy hypothesis: the load forecast, TTF gas price, and nuclear availability ratio already implicitly encode the meteorological information relevant to French day-ahead price formation. This finding is the thesis's primary empirical contribution and challenges the prevailing assumption that weather integration is always beneficial in electricity price forecasting.
+\textbf{Second, the role of weather is regime-dependent.} In the stable
+May 2024--April 2025 test period, weather features produce no statistically
+significant forecast improvement ($p = 0.572$, DM $= -0.565$). However, a
+validation on the 2022 energy crisis reverses this result: the DM test yields
+$p < 0.001$ (DM $= -13.27$), and Model C reduces MAE by 0.73 EUR/MWh over
+Model B in 2022. We attribute the stable-period non-significance to the
+\textit{information redundancy hypothesis}: the load forecast, TTF gas price,
+and nuclear availability ratio already encode the meteorological information
+relevant to French price formation under normal conditions. The significance
+in 2022 arises because the gas supply crisis decoupled TTF from local
+temperature, breaking the indirect weather channel and making the direct
+temperature-demand effect visible. This regime-dependent finding is the thesis's
+primary empirical contribution and calls for nuanced interpretation: weather
+features are neither always beneficial nor always redundant — their value
+depends on the structural state of the gas and nuclear supply.
 
 \textbf{Third, Random Forest outperforms XGBoost with default hyperparameters.} XGBoost achieves a higher absolute P\&L in the backtest but at the cost of a Maximum Drawdown more than three times larger than the Random Forest. On a risk-adjusted basis (Calmar ratio of 107 vs 320--328), RF is the superior model. The performance gap is attributed to XGBoost's sensitivity to extreme price observations in the training set and could be closed through systematic hyperparameter optimisation.
 
@@ -23,7 +37,7 @@ Based on our findings, we offer the following recommendations for practitioners:
 \begin{itemize}
   \item \textbf{Use Random Forest as the primary forecasting model} for the French day-ahead market. It outperforms both the na\"{i}ve benchmark and XGBoost on risk-adjusted metrics, and its MDI feature importances provide interpretable insights into price drivers.
 
-  \item \textbf{Prioritise fundamental features over weather.} Given our ablation result, model development effort is better spent improving the quality of load forecasts, fuel price integration, and cross-border flow data rather than adding more meteorological variables.
+  \item \textbf{Prioritise fundamental features in stable regimes; retain weather capability for crisis regimes.} Under normal market conditions, model development effort is better spent improving the quality of load forecasts, fuel price integration, and cross-border flow data rather than adding more meteorological variables. However, the 2022 result demonstrates that weather features provide statistically significant value during crisis regimes characterised by low nuclear availability and decoupled gas-weather co-movement. A production model should include weather features with a regime-detection mechanism that activates or de-weights them based on observable market conditions.
 
   \item \textbf{Implement periodic retraining.} The current static model is trained through April 2024. A monthly or quarterly retraining schedule would adapt to structural market changes (increasing renewable penetration, nuclear fleet evolution) and is a prerequisite for production deployment.
 
@@ -32,9 +46,25 @@ Based on our findings, we offer the following recommendations for practitioners:
 
 \section{Broader Implications}
 
-The finding that weather is non-significant in the French day-ahead market, while counterintuitive, reflects a broader insight about information aggregation in commodity markets. When market prices (TTF gas) and operational forecasts (RTE load forecast) already incorporate weather expectations, raw meteorological variables become redundant from a statistical standpoint. This principle — that feature selection should account for the information already embedded in price-based variables — is likely applicable beyond the electricity market to other commodity forecasting problems.
+The regime-dependent weather finding reflects a broader insight about
+information aggregation in commodity markets. In stable conditions, when market
+prices (TTF gas) and operational forecasts (RTE load forecast) already
+incorporate weather expectations, raw meteorological variables become
+statistically redundant. This principle — that feature selection should account
+for the information already embedded in price-based variables — is likely
+applicable beyond the electricity market to other commodity forecasting
+problems. However, the 2022 result shows that this redundancy is conditional:
+structural supply shocks that break the normal co-movement between commodity
+prices and weather can reinstate the direct weather channel. Forecasters should
+monitor the stability of these co-movement relationships and treat weather
+feature inclusion as a dynamic decision rather than a permanent design choice.
 
-From a market design perspective, this thesis illustrates how the quality of publicly available data (ENTSO-E generation data, RTE load forecasts) can substitute for proprietary weather modelling infrastructure, lowering the barriers to participation in day-ahead electricity price forecasting.
+From a market design perspective, this thesis illustrates how the quality of
+publicly available data (ENTSO-E generation data, RTE load forecasts) can
+substitute for proprietary weather modelling infrastructure during normal market
+conditions, lowering the barriers to participation in day-ahead electricity
+price forecasting. During crisis regimes, however, direct weather integration
+provides measurable value that cannot be obtained from public market data alone.
 
 \section{Code and Data Availability}
 

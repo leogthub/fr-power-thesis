@@ -1,0 +1,5 @@
+Model,MAE (EUR/MWh),RMSE (EUR/MWh),sMAPE (%),R²,Hit ratio (%)
+Naif (lag-168h),72.736,111.106,29.175,0.419,57.4
+Random Forest (sans meteo),67.282,106.758,25.284,0.464,58.9
+Random Forest (avec meteo),66.554,105.629,25.006,0.475,58.7
+XGBoost (avec meteo),76.316,123.54,27.963,0.282,61.5

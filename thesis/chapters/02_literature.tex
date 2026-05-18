@@ -6,48 +6,228 @@
 
 \section{Overview of Electricity Price Forecasting}
 
-The electricity price forecasting literature has expanded rapidly since market liberalisation in the 1990s. \citet{weron2014} provides the definitive survey, classifying approaches into five families: (1) multi-agent models, (2) fundamental models, (3) reduced-form stochastic models, (4) statistical models, and (5) computational intelligence models. More recently, \citet{nowotarski2018} document the shift towards probabilistic forecasting and machine learning methods. For the purposes of this thesis, we focus on short-term point forecasting at the day-ahead horizon, which remains the most practically relevant setting for market participants.
+The electricity price forecasting (EPF) literature has expanded rapidly since
+market liberalisation began in the 1990s. \citet{weron2014} provides the
+definitive survey, classifying approaches into five families: (1) multi-agent
+models, (2) fundamental models, (3) reduced-form stochastic models,
+(4) statistical models, and (5) computational intelligence models. The survey
+covers over two decades of research and remains the standard reference for
+the field, identifying that no single method dominates across all markets and
+horizons, and that the most practically useful improvements typically come from
+better feature engineering rather than more complex model architectures.
+More recently, \citet{nowotarski2018} document the shift towards probabilistic
+forecasting and machine learning methods, arguing that ensemble combination
+of diverse forecasting approaches consistently outperforms individual models.
+
+The field has converged on several stylised facts about electricity price
+dynamics: (1) prices exhibit multi-frequency seasonality (intraday, weekly,
+annual); (2) the distribution is heavily right-skewed with non-trivial negative
+mass; (3) extreme price spikes are driven by fundamental supply-demand
+imbalances rather than by speculative dynamics; and (4) the price-setting
+technology shifts across hours and seasons, making the relationship between
+fundamentals and prices inherently non-linear. These characteristics motivate
+the use of non-linear ensemble methods capable of capturing threshold effects
+and interaction terms.
+
+For the purposes of this thesis, we focus on short-term \textit{point}
+forecasting at the day-ahead horizon, which remains the most practically
+relevant setting for physical market participants who must submit bids to the
+EPEX SPOT auction by 12:00 CET each day. The review is structured around three
+questions: (1) what methods have been proposed and evaluated? (2) what role
+does weather play in these models? and (3) how should models be formally
+compared?
 
 \section{Statistical and Econometric Approaches}
 
-Early work on day-ahead price forecasting relied on time-series models adapted from financial econometrics. Autoregressive models — in particular ARIMA and its seasonal extensions — capture the strong autocorrelation structure of electricity prices but struggle to model the non-linear interactions between price and its fundamental drivers. GARCH-family models address volatility clustering but are ill-suited to the extreme price spikes that characterise electricity markets, where the distribution of returns has much heavier tails than financial asset returns.
+Early work on day-ahead price forecasting relied on time-series models adapted
+from financial econometrics. Autoregressive models — in particular ARIMA and
+its seasonal extensions (SARIMA) — capture the strong autocorrelation structure
+of electricity prices but struggle to model the non-linear interactions between
+price and its fundamental drivers. GARCH-family models address volatility
+clustering \citep{bunn2003} but are ill-suited to the extreme price spikes
+that characterise electricity markets, where the distribution of returns has
+much heavier tails than financial asset returns, including a non-trivial mass
+of negative observations \citep{fanone2013}.
 
-The mean-reversion and jump-diffusion framework, introduced in the commodity pricing literature, is better able to capture the spike-and-reversion behaviour of electricity prices \citep{fanone2013}. However, these models typically require numerical methods for calibration and are difficult to extend to include exogenous weather or fundamental variables.
+The mean-reversion and jump-diffusion framework, introduced in the commodity
+pricing literature, is better able to capture the spike-and-reversion behaviour
+of electricity prices. However, these structural models typically require
+numerical methods for calibration and are difficult to extend to include
+exogenous weather or fundamental variables, limiting their usefulness when
+the research objective is to quantify the marginal contribution of individual
+predictors.
 
-Factor models represent a middle ground. \citet{maciejowska2016} apply Factor Quantile Regression Averaging to day-ahead prices across European markets, combining multiple linear specifications through optimal weights. \citet{uniejewski2019} propose automated variable selection using LASSO regularisation applied to a rich set of price lags and calendar variables, achieving competitive performance relative to more complex non-linear models. This result — that well-specified linear models with price lags can be surprisingly competitive — is relevant to our own findings.
+Factor models and regularised regression represent an important middle ground.
+\citet{maciejowska2016} apply Factor Quantile Regression Averaging to
+day-ahead prices across European markets, combining multiple linear
+specifications through optimal weights. Critically, \citet{uniejewski2019}
+demonstrate that automated variable selection using LASSO regularisation applied
+to a rich set of price lags and calendar variables achieves competitive
+performance relative to more complex non-linear models, even on markets with
+high renewable penetration. This result — that well-specified linear models
+with carefully chosen price lags can be surprisingly competitive — is directly
+relevant to our finding that weather adds negligible marginal value once price
+lags and fundamental variables are included. The common thread is that the
+predictive information in electricity prices is highly concentrated in recent
+price history: any additional variable, whether weather-based or
+fundamental-based, must provide information \textit{not already present} in
+recent prices to justify its inclusion.
 
 \section{Machine Learning Approaches}
 
-The application of machine learning to electricity price forecasting has accelerated since the mid-2010s, driven by the increasing availability of high-resolution data and cheap computational resources. \citet{aggarwal2009} provide an early review, while \citet{lago2018} offer a more recent empirical comparison of deep learning architectures (LSTM, CNN) against traditional benchmarks on European day-ahead markets.
+The application of machine learning to electricity price forecasting has
+accelerated since the mid-2010s, driven by the increasing availability of
+high-resolution data and cheap computational resources. \citet{aggarwal2009}
+provide an early review, while \citet{lago2018} offer an empirical comparison
+of deep learning architectures (LSTM, CNN) against traditional benchmarks on
+European day-ahead markets, finding that deep learning improves on ARIMA but
+not consistently over well-tuned tree ensembles.
 
-\textbf{Tree-based ensemble methods} — Random Forests \citep{breiman2001} and Gradient Boosted Trees (including XGBoost, \citealt{chen2016}) — have proven particularly well-suited to the electricity price forecasting problem for several reasons. First, they handle non-linear interactions between weather, calendar, and fundamental variables without requiring manual feature transformations. Second, they are robust to outliers and near-zero prices, which are frequent in liberalised markets and create difficulties for methods that rely on symmetric loss functions. Third, tree ensembles provide built-in feature importance measures (Mean Decrease in Impurity for Random Forests) that offer interpretable insights into price drivers, a property highly valued by market participants who must justify their models to risk committees.
+The most systematic evaluation of machine learning methods for EPF is provided
+by \citet{lago2021}, who benchmark 27 algorithms across 12 European electricity
+markets using a standardised open-source evaluation framework. Their key
+finding is that no algorithm consistently dominates: the best-performing method
+varies by market and time period, and the margin of improvement from complex
+deep learning over simpler tree-based methods is often statistically
+insignificant once proper Diebold-Mariano testing is applied. For the French
+market specifically, \citet{lago2021} report benchmark MAE values in the range
+of 10--25 EUR/MWh under stable market conditions, which provides the reference
+frame against which our results (MAE $\approx$ 16.94 EUR/MWh in May 2024 --
+April 2025) should be interpreted. The authors explicitly recommend that EPF
+papers adopt DM testing as standard practice for model comparison, a
+recommendation we follow throughout Chapter~\ref{chap:model}.
 
-\citet{ziel2018} compare univariate and multivariate forecasting frameworks on European day-ahead markets and find that multivariate models incorporating load, generation, and cross-border flows outperform univariate price-only models. This supports the use of fundamental variables in our feature matrix. However, none of the reviewed studies specifically test the marginal contribution of weather variables in the French market context using formal statistical tests.
+\textbf{Tree-based ensemble methods} — Random Forests \citep{breiman2001} and
+Gradient Boosted Trees (including XGBoost, \citealt{chen2016}) — have proven
+particularly well-suited to the EPF problem for several reasons. First, they
+handle non-linear interactions between weather, calendar, and fundamental
+variables without requiring manual feature transformations. Second, they are
+robust to outliers and near-zero prices, which are frequent in liberalised
+markets and create difficulties for methods that rely on symmetric loss
+functions. Third, tree ensembles provide built-in feature importance measures
+(Mean Decrease in Impurity for Random Forests) that offer interpretable
+insights into price drivers, a property highly valued by market participants
+who must justify their models to risk committees. \citet{zhao2023} confirm in a
+recent comparative study that gradient boosted trees remain competitive with
+neural network architectures on EPF tasks when sample sizes are moderate
+($n < 100{,}000$ hourly observations), as in our setting.
+
+\citet{ziel2018} compare univariate and multivariate forecasting frameworks on
+European day-ahead markets and find that multivariate models incorporating
+load, generation, and cross-border flows outperform univariate price-only
+models, supporting the use of fundamental variables in our feature matrix.
+A consistent finding across the ML literature is that price lags dominate
+feature importance rankings when included in the feature matrix \citep{lago2021,
+uniejewski2019}. This is consistent with the strong autocorrelation structure
+of electricity prices and the difficulty of improving over recent price history
+as a predictor. Our results — where the 24-hour price lag accounts for
+approximately 22\% of total MDI importance — are in line with this consensus.
 
 \section{Weather as a Driver of Electricity Prices}
 
-The causal pathway from weather to electricity prices is well-established in the fundamental literature. Temperature affects demand through heating (in winter) and cooling (in summer). Wind speed determines the output of wind generators, which set the marginal cost to zero when in excess, driving prices down. Solar irradiance similarly compresses midday prices during high-penetration periods. Precipitation affects hydro reservoir levels, with droughts leading to higher thermal generation and higher prices.
+The causal pathway from weather to electricity prices is well-established in
+the fundamental literature. Temperature affects demand through heating (in
+winter) and cooling (in summer). Wind speed determines the output of wind
+generators, which can set the marginal cost to zero when in excess, driving
+prices downward. Solar irradiance compresses midday prices during
+high-penetration periods, a phenomenon known as the ``solar merit order
+effect''. Precipitation affects hydro reservoir levels, with droughts leading
+to higher thermal generation and higher prices.
 
-\citet{staffell2016} document the strong correlation between wind speed and wind generation output (approximately cubic relationship), which underlies our \textit{wind power proxy} feature. \citet{lindberg2019} examine the interaction between wind and hydro in Nordic markets, where weather has a particularly dominant role.
+\citet{staffell2016} document the strong correlation between wind speed and
+wind generation output (approximately cubic relationship), which underlies our
+\textit{wind power proxy} feature. \citet{lindberg2019} examine the interaction
+between wind and hydro in Nordic markets, where weather plays a particularly
+dominant role due to the high share of dispatchable hydro generation.
 
-In the French market specifically, the thermosensitivity is unusually high by European standards. \citet{rte2024} report that each degree Celsius below 17\textdegree C increases peak demand by approximately 2.4 GW — a consequence of the high penetration of electric heating (over 30\% of French households). This motivates the use of 17\textdegree C as the Heating Degree Day threshold throughout this thesis, consistent with RTE's own operational methodology.
+In the French market specifically, the thermosensitivity is unusually high by
+European standards. \citet{rte2024} report that each degree Celsius below
+17\textdegree C increases peak demand by approximately 2.4 GW — a consequence
+of the high penetration of electric heating (over 30\% of French households).
+This motivates the use of 17\textdegree C as the Heating Degree Day threshold
+throughout this thesis, consistent with RTE's own operational methodology and
+higher than the 15\textdegree C threshold used in Germany.
 
-However, the relationship between weather and price is not purely additive. Cold temperatures combined with low wind speed — a combination we call the \textit{Weather Stress Index} — are particularly dangerous for the French system, as they simultaneously increase demand and reduce renewable generation. Such episodes have historically driven the most extreme price spikes. Our WSI feature, defined as HDD divided by wind speed, attempts to capture this interaction.
+However, the literature has increasingly recognised that weather effects on
+electricity prices may be \textit{indirect} rather than direct — transmitted
+through other observable variables. If electricity prices are primarily set by
+the marginal cost of gas-fired generation, and if gas prices themselves respond
+to pan-European heating demand, then a model including TTF gas prices may
+already capture the meteorological signal without explicit weather features.
+This indirect transmission channel is the foundation of our information
+redundancy hypothesis.
+
+The 2021--2023 European energy crisis provides a natural experiment on this
+hypothesis. The simultaneous withdrawal of Russian pipeline gas supply and
+France's historically low nuclear availability (reaching $\approx$40\% in
+mid-2022 due to corrosion-related maintenance) created a regime in which gas
+prices became the dominant driver of electricity prices across Europe. In such
+a regime, the direct weather channel — cold temperatures increasing electricity
+demand directly — may be more visible above the gas price noise than in normal
+market conditions. Testing whether weather features are more informative during
+the 2022 crisis than in the 2024--25 normalisation period is a central
+contribution of this thesis (Section~\ref{sec:validation2022}).
 
 \section{Diebold-Mariano Testing in Energy Forecasting}
 
-Comparing forecast accuracy across models requires careful statistical treatment. Informal comparisons based on point estimates of MAE or RMSE can lead to misleading conclusions when differences are not statistically significant. The Diebold-Mariano (DM) test \citep{diebold1995} provides a formal framework for testing the null hypothesis of equal predictive accuracy between two competing forecasts. The test statistic is based on the difference in loss functions (here, absolute errors) and accounts for autocorrelation in the loss differential series via a Newey-West long-run variance estimator \citep{newbold1993}.
+Comparing forecast accuracy across models requires careful statistical
+treatment. Informal comparisons based on point estimates of MAE or RMSE can
+lead to misleading conclusions when differences are not statistically
+significant. The Diebold-Mariano (DM) test \citep{diebold1995} provides a
+formal framework for testing the null hypothesis of equal predictive accuracy
+between two competing forecasts. The test statistic is based on the difference
+in loss functions (here, absolute errors) and accounts for autocorrelation in
+the loss differential series via a Newey-West long-run variance estimator
+\citep{newbold1993}.
 
-For small samples, \citet{harvey1997} propose a correction factor that adjusts the DM statistic to better approximate a $t$-distribution, reducing the risk of over-rejection of the null. We apply this Harvey-Leybourne-Newbold (HLN) correction throughout our analysis, following best practice in the forecasting literature \citep{weron2014}.
+For small samples, \citet{harvey1997} propose a correction factor that adjusts
+the DM statistic to better approximate a $t$-distribution, reducing the risk
+of over-rejection of the null. We apply this Harvey-Leybourne-Newbold (HLN)
+correction throughout our analysis, following best practice in the EPF
+literature \citep{weron2014}. \citet{lago2021} explicitly recommend the
+DM test with HLN correction as the standard for EPF model comparisons, noting
+that many published results that appear significant on point metrics alone are
+not statistically significant once proper testing is applied. Adopting this
+standard is particularly important for our weather ablation study: the
+difference in MAE between our models B and C is only 0.01 EUR/MWh — a
+difference that appears negligible on inspection and is confirmed as
+statistically insignificant by the DM test ($p = 0.572$).
 
 \section{Gap in the Literature}
 
-Despite the growing body of work on machine learning for electricity price forecasting, several gaps remain relevant to this thesis:
+Despite the growing body of work on machine learning for electricity price
+forecasting, several gaps remain relevant to this thesis:
 
 \begin{enumerate}
-  \item \textbf{French market specificity:} Most empirical studies focus on the German, Spanish, or Nordic markets. The French market's combination of high nuclear share, high thermosensitivity, and interconnection with multiple neighbours creates a distinct price formation mechanism that deserves dedicated analysis.
+  \item \textbf{French market specificity:} Most empirical studies focus on the
+  German, Spanish, or Nordic markets, or treat European markets as homogeneous.
+  The French market's combination of dominant nuclear share ($\approx$70\% of
+  generation in normal conditions), unusually high thermosensitivity, and
+  interconnection with multiple neighbours creates a distinct price formation
+  mechanism. The 2022 crisis, during which France's nuclear availability fell
+  to an unprecedented 40\%, represents a structurally unique episode whose
+  impact on the weather-price relationship has not been formally studied in the
+  EPF literature.
 
-  \item \textbf{Formal ablation of weather features:} While weather variables are routinely included in forecasting models, their marginal contribution is rarely isolated using a statistically formal test. We address this gap with a Diebold-Mariano ablation study.
+  \item \textbf{Formal ablation of weather features:} While weather variables
+  are routinely included in EPF models, their marginal contribution is rarely
+  isolated using a statistically formal test. Most studies either exclude
+  weather entirely or include it without testing whether its addition is
+  statistically significant relative to a fundamental-only baseline. We address
+  this gap with a Diebold-Mariano ablation study that directly tests whether
+  ERA5 meteorological variables improve on a model that already includes load
+  forecasts, fuel prices, and nuclear availability.
 
-  \item \textbf{Economic value evaluation:} Most studies evaluate models on statistical metrics alone. We extend the analysis to an executable day-ahead trading backtest with realistic transaction costs, linking statistical accuracy to economic value.
+  \item \textbf{Regime-dependence of the weather contribution:} No study, to
+  our knowledge, explicitly tests whether the marginal contribution of weather
+  variables varies across market regimes (crisis vs.\ normal). Our design,
+  which evaluates Models B vs C on both the 2024--25 stable period and the 2022
+  crisis period using the same DM testing framework, directly addresses this gap
+  and produces our most novel empirical finding.
+
+  \item \textbf{Economic value evaluation:} Most studies evaluate models on
+  statistical metrics alone. We extend the analysis to an executable day-ahead
+  trading backtest with realistic transaction costs and a dead-band filter
+  (Chapter~\ref{chap:backtest}), linking statistical accuracy to economic value
+  and providing a practitioner-relevant assessment of model quality.
 \end{enumerate}
