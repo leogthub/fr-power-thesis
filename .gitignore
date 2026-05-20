@@ -245,3 +245,12 @@ thesis.zip
 thesis/code_appendix.aux
 thesis/code_appendix.log
 thesis/code_appendix.toc
+
+thesis/main_submit.aux
+thesis/main_submit.bbl
+thesis/main_submit.blg
+thesis/main_submit.log
+thesis/main_submit.lof
+thesis/main_submit.lot
+thesis/main_submit.out
+thesis/main_submit.toc
