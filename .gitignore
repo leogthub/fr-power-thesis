@@ -241,3 +241,7 @@ thesis/main.log
 # Temporary zips
 outputs/figures.zip
 thesis.zip
+
+thesis/code_appendix.aux
+thesis/code_appendix.log
+thesis/code_appendix.toc
