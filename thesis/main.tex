@@ -88,6 +88,9 @@
   backgroundcolor=\color{gray!8}
 }
 
+% ── Embedded file attachment ─────────────────────────────────
+\usepackage{attachfile2}
+
 % ── Misc ─────────────────────────────────────────────────────
 \usepackage{enumitem}
 \usepackage{csquotes}
@@ -144,6 +147,24 @@
   \vfill
   {\color{edhec}\rule{\linewidth}{2pt}}
 \end{titlepage}
+
+% ── Code attachment (top of document) ────────────────────────
+\thispagestyle{empty}
+\vspace*{0.5cm}
+\noindent\fbox{%
+  \parbox{\textwidth}{%
+    \centering
+    \textbf{Source Code Appendix} \quad
+    \textattachfile[
+      color=0 0.31 0.49,
+      mimetype=application/pdf,
+      description={Source Code — FR Power Thesis (Python, 62 pages)}
+    ]{code_appendix.pdf}{\textcolor{accent}{\underline{Click here to open Code\_Appendix.pdf}}}
+    \quad (embedded PDF, 62 pages)
+  }%
+}
+\vspace{0.5cm}
+\clearpage
 
 % ── Abstract ─────────────────────────────────────────────────
 \chapter*{Abstract}
