@@ -30,7 +30,7 @@ embedded in other features of the model through three distinct channels:
 
 \textbf{Load forecast as a temperature proxy.} RTE publishes an hourly load
 forecast for D+1 that is computed using a proprietary model incorporating
-temperature forecasts \citep{rte2024}. When we include this load forecast in
+temperature forecasts \citep{rte2023}. When we include this load forecast in
 the feature matrix, we implicitly condition on a temperature-adjusted demand
 estimate. The raw temperature variable then adds no marginal information beyond
 what is already captured by RTE's own weather-informed demand forecast. The
@@ -42,8 +42,7 @@ to heating demand aggregated across all gas-consuming countries. A cold spell
 in France simultaneously increases French electricity demand and increases gas
 demand across Europe, pushing TTF higher. A model that includes TTF therefore
 already incorporates a pan-European temperature signal through the lens of the
-commodity market. This indirect transmission channel is consistent with the
-literature on weather-adjusted fuel prices \citep{lindberg2019}: commodity
+commodity market. This indirect transmission channel reflects a well-established principle: commodity
 markets aggregate weather information efficiently when the weather-commodity
 relationship is stable.
 

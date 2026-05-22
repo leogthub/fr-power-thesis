@@ -107,10 +107,10 @@ markets and create difficulties for methods that rely on symmetric loss
 functions. Third, tree ensembles provide built-in feature importance measures
 (Mean Decrease in Impurity for Random Forests) that offer interpretable
 insights into price drivers, a property highly valued by market participants
-who must justify their models to risk committees. \citet{zhao2023} confirm in a
-recent comparative study that gradient boosted trees remain competitive with
-neural network architectures on EPF tasks when sample sizes are moderate
-($n < 100{,}000$ hourly observations), as in our setting.
+who must justify their models to risk committees. \citet{tschora2022} confirm in a
+recent comparative study on European day-ahead markets that gradient boosted trees
+remain competitive with neural network architectures on EPF tasks when sample sizes
+are moderate ($n < 100{,}000$ hourly observations), as in our setting.
 
 \citet{ziel2018} compare univariate and multivariate forecasting frameworks on
 European day-ahead markets and find that multivariate models incorporating
@@ -136,12 +136,10 @@ to higher thermal generation and higher prices.
 
 \citet{staffell2016} document the strong correlation between wind speed and
 wind generation output (approximately cubic relationship), which underlies our
-\textit{wind power proxy} feature. \citet{lindberg2019} examine the interaction
-between wind and hydro in Nordic markets, where weather plays a particularly
-dominant role due to the high share of dispatchable hydro generation.
+\textit{wind power proxy} feature.
 
 In the French market specifically, the thermosensitivity is unusually high by
-European standards. \citet{rte2024} report that each degree Celsius below
+European standards. \citet{rte2023} report that each degree Celsius below
 17\textdegree C increases peak demand by approximately 2.4 GW — a consequence
 of the high penetration of electric heating (over 30\% of French households).
 This motivates the use of 17\textdegree C as the Heating Degree Day threshold
