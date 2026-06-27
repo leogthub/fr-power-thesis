@@ -465,7 +465,81 @@ pic_fit(s, f"{FIG}/equity_curves_net.png", Inches(7.0), Inches(1.5), Inches(6.0)
 footer(s, 12)
 
 # ============================================================
-# SLIDE 13 — CONCLUSIONS (Lyam)
+# SLIDE 13 — ROBUSTNESS (Lyam)
+# ============================================================
+s = add_slide()
+header(s, "Robustness Checks", "The result holds under different assumptions", "LYAM")
+txt(s, Inches(0.55), Inches(1.35), Inches(5.8), Inches(0.5),
+    [{"text": "Cost sensitivity — Net P&L (EUR/MW)", "size": 14, "bold": True, "color": EDHEC}])
+cost_rows = [
+    ("Model", "0.10 EUR/MWh", "0.30 EUR/MWh", "0.60 EUR/MWh"),
+    ("A — Naïve", "88,340", "85,482", "81,195"),
+    ("B — RF no wx", "139,742", "136,884", "132,597"),
+    ("C — RF wx", "139,569", "136,711", "132,424"),
+    ("D — XGBoost", "144,870", "142,012", "137,725"),
+]
+tx2, ty2, tw2 = Inches(0.55), Inches(1.95), Inches(5.8)
+rh2 = Inches(0.56)
+colw2 = [Inches(1.85), Inches(1.32), Inches(1.32), Inches(1.31)]
+for ri, row in enumerate(cost_rows):
+    cy = ty2 + rh2 * ri
+    if ri == 0:
+        rect(s, tx2, cy, tw2, rh2, EDHEC)
+    elif row[0].startswith("C"):
+        rect(s, tx2, cy, tw2, rh2, RGBColor(214, 232, 240))
+    else:
+        rect(s, tx2, cy, tw2, rh2, LIGHT if ri % 2 else WHITE)
+    cx = tx2
+    for ci, cell in enumerate(row):
+        col = WHITE if ri == 0 else (EDHEC if row[0].startswith("C") else DARK)
+        al = PP_ALIGN.LEFT if ci == 0 else PP_ALIGN.CENTER
+        txt(s, cx + Inches(0.07), cy, colw2[ci] - Inches(0.07), rh2,
+            [{"text": cell, "size": 12, "bold": (ri == 0 or row[0].startswith("C") or ci == 0), "color": col, "align": al}],
+            align=al, anchor=MSO_ANCHOR.MIDDLE)
+        cx += colw2[ci]
+txt(s, Inches(0.55), Inches(5.1), Inches(5.8), Inches(1.6),
+    [{"text": [("RF Sharpe: 19.51 → 19.46 → 19.16", {"bold": True, "size": 14, "color": GREEN}),
+               ("  across all three cost scenarios", {"size": 13, "color": DARK})], "space_after": 6},
+     {"text": [("Positive Sharpe in ", {"size": 13, "color": DARK}),
+               ("all 12 months", {"bold": True, "size": 13, "color": EDHEC}),
+               (" of the test period", {"size": 13, "color": DARK})], "space_after": 6},
+     {"text": [("DM result stable: ", {"bold": True, "size": 13, "color": EDHEC}),
+               ("p = 0.572 n.s. confirmed across multiple sub-periods", {"size": 13, "color": DARK})]}])
+pic_fit(s, f"{FIG}/cost_sensitivity.png", Inches(6.8), Inches(1.45), Inches(6.15), Inches(5.1))
+footer(s, 13)
+
+# ============================================================
+# SLIDE 14 — LIMITATIONS (Lyam)
+# ============================================================
+s = add_slide()
+header(s, "Limitations & Future Work", "What we would do differently", "LYAM")
+limits = [
+    ("ERA5 = upper bound", "Reanalysis gives perfect hindsight weather — production would use NWP forecasts with 10–30% error. Our result is a ceiling on weather value."),
+    ("No walk-forward retraining", "Single batch training; monthly retraining on an expanding window would better reflect real trading conditions."),
+    ("Carbon prices (EUA) excluded", "EUA correlates with TTF/coal — partly absorbed — but should be tested explicitly as an additional feature."),
+    ("XGBoost not fully tuned", "Default hyperparameters; Bayesian optimisation could close or reverse the RF vs XGBoost gap."),
+    ("France only", "The redundancy mechanism is specific to France's nuclear-dominant, high-thermosensitivity structure. Germany, Spain or UK may differ substantially."),
+    ("No market impact", "Transaction costs modelled as flat fee; large positions (>10 MW) would face liquidity constraints not captured here."),
+]
+col_x = [Inches(0.55), Inches(6.85)]
+col_w = Inches(6.0)
+for idx, (t, d) in enumerate(limits):
+    col = idx % 2
+    row = idx // 2
+    x = col_x[col]
+    y = Inches(1.5) + Inches(1.6) * row
+    rect(s, x, y, Inches(0.55), Inches(1.35), RGBColor(180, 95, 30))
+    txt(s, x, y, Inches(0.55), Inches(1.35),
+        [{"text": str(idx + 1), "size": 20, "bold": True, "color": WHITE, "align": PP_ALIGN.CENTER}],
+        align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+    rect(s, x + Inches(0.65), y, col_w - Inches(0.65), Inches(1.35), LIGHT)
+    txt(s, x + Inches(0.75), y + Inches(0.08), col_w - Inches(0.8), Inches(1.2),
+        [{"text": t, "size": 14.5, "bold": True, "color": EDHEC},
+         {"text": d, "size": 12, "color": DARK, "space_before": 2}])
+footer(s, 14)
+
+# ============================================================
+# SLIDE 15 — CONCLUSIONS (Lyam)
 # ============================================================
 s = add_slide()
 header(s, "Conclusions", "Four takeaways", "LYAM")
@@ -486,10 +560,10 @@ for i, (t, d) in enumerate(concl, 1):
         [{"text": t, "size": 17, "bold": True, "color": EDHEC},
          {"text": d, "size": 14, "color": DARK, "space_before": 2}])
     y += Inches(1.34)
-footer(s, 13)
+footer(s, 15)
 
 # ============================================================
-# SLIDE 14 — THANK YOU / Q&A
+# SLIDE 16 — THANK YOU / Q&A
 # ============================================================
 s = add_slide()
 rect(s, 0, 0, SW, SH, EDHEC)
@@ -506,4 +580,5 @@ txt(s, Inches(1.0), Inches(5.0), Inches(11.3), Inches(1.0),
 
 os.makedirs("outputs", exist_ok=True)
 prs.save(OUT)
-print("Saved", OUT, "with", len(prs.slides._sldIdLst), "slides")
+import sys
+print("Saved", OUT, "with", len(prs.slides._sldIdLst), "slides", file=sys.stderr)
