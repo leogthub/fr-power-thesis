@@ -3,7 +3,7 @@
 **Leo Cambreleng & Lyam Oumedjeber · EDHEC MSc DAAI · Juin 2026**
 
 > **FORMAT** : 20 min exposé + 10 min Q&A · 1 examinateur · Teams · Anglais  
-> **LEO** parle slides 1–7 · **LYAM** parle slides 8–13 · Slide 14 : les deux  
+> **LEO** parle slides 1–7 · **LYAM** parle slides 8–15 · Slide 16 : les deux  
 > Timing indicatif entre crochets — total visé **~19 minutes**
 
 ---
@@ -190,7 +190,37 @@ The Random Forest models produce positive Sharpe ratios in every single one of t
 
 ---
 
-## SLIDE 13 — CONCLUSIONS `[LYAM · ~2min]`
+## SLIDE 13 — ROBUSTNESS CHECKS `[LYAM · ~45s]`
+
+Before concluding, let me briefly address robustness.
+
+The trading results hold across all three transaction cost scenarios. RF's Sharpe ratio moves from 19.51 at the lowest cost to 19.16 at the highest — a degradation of less than two percent. The strategy generates a positive Sharpe ratio in every single one of the twelve test months, with no month below zero. And the DM non-significance result for the stable regime is confirmed across multiple sub-periods, not just the full test window.
+
+The conclusion is not sensitive to cost assumptions or to the specific time window chosen.
+
+---
+
+## SLIDE 14 — LIMITATIONS & FUTURE WORK `[LYAM · ~1min]`
+
+We are transparent about six limitations of this work.
+
+First, ERA5 is a reanalysis — it gives us perfect hindsight weather. In production, we would only have NWP forecasts with ten to thirty percent error. Our result is therefore an upper bound on weather value; the true production gain would be smaller.
+
+Second, we trained a single batch model. Monthly walk-forward retraining on an expanding window would better reflect live trading conditions.
+
+Third, EUA carbon prices are excluded. While their signal is partially absorbed by TTF and coal, they should be tested explicitly.
+
+Fourth, XGBoost was run with default hyperparameters. Bayesian optimisation could close or reverse the RF versus XGBoost gap.
+
+Fifth, we study France only. Germany, Spain, and the UK have structurally different generation mixes, and the redundancy mechanism may not apply.
+
+Sixth, transaction costs are modelled as a flat fee. Large positions above ten megawatts would face liquidity constraints not captured here.
+
+These limitations do not invalidate our central finding — but they define the perimeter of what we can claim.
+
+---
+
+## SLIDE 15 — CONCLUSIONS `[LYAM · ~2min]`
 
 Let me close with our four main takeaways.
 
@@ -208,7 +238,7 @@ Thank you very much for your attention. We are happy to take your questions.
 
 ---
 
-## SLIDE 14 — QUESTIONS `[LEO + LYAM · ~30s]`
+## SLIDE 16 — QUESTIONS `[LEO + LYAM · ~30s]`
 
 > *[Sourire, pause de 2-3 secondes. Laisser l'examinateur parler en premier.]*  
 > *[Si silence : "Would you like us to start with any particular aspect of the methodology ?"]*
@@ -234,9 +264,11 @@ Thank you very much for your attention. We are happy to take your questions.
 | 10 — Crise 2022 | LYAM | 2min |
 | 11 — Pourquoi 2022 | LYAM | 2min |
 | 12 — Backtest | LYAM | 1min30 |
-| 13 — Conclusions | LYAM | 2min |
-| 14 — Questions | BOTH | 30s |
-| **TOTAL** | | **~19min** |
+| 13 — Robustness | LYAM | 45s |
+| 14 — Limitations | LYAM | 1min |
+| 15 — Conclusions | LYAM | 2min |
+| 16 — Questions | BOTH | 30s |
+| **TOTAL** | | **~21min** |
 
 ---
 
